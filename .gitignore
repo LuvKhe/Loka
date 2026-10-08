@@ -1,0 +1,54 @@
+# ---- Secrets / Environment ----
+.env
+.env.local
+.env.*.local
+*.env
+
+# ---- Node / npm ----
+node_modules/
+.next/
+.turbo/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# ---- Flutter / Dart ----
+apps/android/.dart_tool/
+apps/android/.flutter-plugins
+apps/android/.flutter-plugins-dependencies
+apps/android/build/
+apps/android/.pub-cache/
+apps/android/.pub/
+apps/android/android/.gradle/
+apps/android/android/key.properties
+apps/android/android/app/google-services.json
+apps/android/*.apk
+apps/android/*.aab
+
+# ---- Supabase ----
+backend/supabase/.branches/
+backend/supabase/.temp/
+supabase/.branches/
+supabase/.temp/
+
+# ---- Edge Functions ----
+backend/functions/.env
+backend/functions/node_modules/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ---- IDE ----
+.idea/
+.vscode/settings.json
+*.iml
+
+# ---- Test fixtures (images are added manually per TESTING.md) ----
+docs/test-data/timetable/*.jpg
+docs/test-data/timetable/*.jpeg
+docs/test-data/timetable/*.png
