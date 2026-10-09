@@ -1,0 +1,48 @@
+name: loka
+description: Loka — campus coordination app for university friends.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Supabase
+  supabase_flutter: ^2.5.6
+
+  # Location (background location + foreground service)
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+
+  # QR code display
+  qr_flutter: ^4.1.0
+
+  # QR code scanning (Phase 2)
+  mobile_scanner: ^5.2.1
+
+  # Secure local storage (recovery code hash verification)
+  flutter_secure_storage: ^9.2.2
+
+  # Shared preferences (lightweight non-sensitive settings)
+  shared_preferences: ^2.3.2
+
+  # HTTP client (for Edge Function calls)
+  http: ^1.2.2
+
+  # Background task scheduling (Android WorkManager)
+  workmanager: ^0.5.2
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
