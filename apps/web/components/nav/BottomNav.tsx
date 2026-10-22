@@ -47,7 +47,7 @@ export default function BottomNav() {
 
   const items: NavItem[] = [
     {
-      href: '/',
+      href: '/home',
       label: 'Home',
       icon: <HomeIcon filled={false} />,
       activeIcon: <HomeIcon filled={true} />,
@@ -77,8 +77,8 @@ export default function BottomNav() {
                     max-w-lg mx-auto">
       <div className="flex">
         {items.map((item) => {
-          const isActive = item.href === '/'
-            ? pathname === '/'
+          const isActive = item.href === '/home'
+            ? pathname === '/home'
             : pathname.startsWith(item.href)
 
           return (

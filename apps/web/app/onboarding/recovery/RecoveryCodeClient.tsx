@@ -1,17 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { ROUTES } from '@loka/shared/constants'
 
 export default function RecoveryCodeClient() {
-  const router = useRouter()
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [navigating, setNavigating] = useState(false)
 
   useEffect(() => {
-    // Read once and immediately clear — the plaintext code must never persist
     const stored = sessionStorage.getItem('loka_recovery_code_once')
     if (stored) {
       sessionStorage.removeItem('loka_recovery_code_once')
@@ -27,13 +26,22 @@ export default function RecoveryCodeClient() {
     })
   }
 
-  function handleDone() {
-    router.replace(ROUTES.HOME)
+  async function handleDone() {
+    setNavigating(true)
+    // Wait for Supabase to confirm the session is active before navigating.
+    // This ensures the auth cookie is written so the server can read it.
+    const supabase = createClient()
+    let attempts = 0
+    while (attempts < 10) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) break
+      await new Promise((r) => setTimeout(r, 200))
+      attempts++
+    }
+    window.location.href = ROUTES.HOME
   }
 
   if (!code) {
-    // If there is no code in sessionStorage, the user likely navigated here directly.
-    // Redirect them home — they can view their recovery code from profile settings.
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
         <div className="w-full max-w-sm space-y-4 text-center">
@@ -91,10 +99,10 @@ export default function RecoveryCodeClient() {
 
           <button
             onClick={handleDone}
-            disabled={!confirmed}
+            disabled={!confirmed || navigating}
             className="loka-btn-primary w-full py-3 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Done
+            {navigating ? 'Loading...' : 'Done'}
           </button>
         </div>
       </div>

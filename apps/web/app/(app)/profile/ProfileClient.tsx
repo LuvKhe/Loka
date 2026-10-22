@@ -40,7 +40,7 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
             <span className="text-blue-600 font-bold text-xl">
-              {profile.displayName[0]?.toUpperCase()}
+              {(profile.displayName ?? '?')[0]?.toUpperCase()}
             </span>
           </div>
           <div>

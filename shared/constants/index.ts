@@ -36,7 +36,7 @@ export const TIMETABLE_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/
 
 // Navigation routes (web)
 export const ROUTES = {
-  HOME: '/',
+  HOME: '/home',
   FRIENDS: '/friends',
   TIMETABLE: '/timetable',
   PROFILE: '/profile',

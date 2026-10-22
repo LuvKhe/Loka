@@ -12,6 +12,7 @@ type SearchState =
   | { kind: 'error'; message: string }
   | { kind: 'sent' }
   | { kind: 'already_friends' }
+  | { kind: 'request_pending'; direction: 'outgoing' | 'incoming' }
 
 export default function AddFriendClient() {
   const router = useRouter()
@@ -50,6 +51,8 @@ export default function AddFriendClient() {
       const data = await res.json()
       if (data.alreadyFriends) {
         setState({ kind: 'already_friends' })
+      } else if (data.pendingRequest) {
+        setState({ kind: 'request_pending', direction: data.pendingRequest.direction })
       } else {
         setState({ kind: 'found', profile: data.profile })
       }
@@ -114,7 +117,7 @@ export default function AddFriendClient() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
               <span className="text-blue-600 font-bold text-lg">
-                {state.profile.displayName[0]?.toUpperCase()}
+                {(state.profile.displayName ?? '?')[0]?.toUpperCase()}
               </span>
             </div>
             <div>
@@ -140,6 +143,16 @@ export default function AddFriendClient() {
       {state.kind === 'already_friends' && (
         <div className="loka-card">
           <p className="text-sm text-gray-500">You are already friends with this person.</p>
+        </div>
+      )}
+
+      {state.kind === 'request_pending' && (
+        <div className="loka-card">
+          <p className="text-sm text-gray-500">
+            {state.direction === 'outgoing'
+              ? 'You already sent this person a friend request.'
+              : 'This person has sent you a friend request. Check your Friends page to accept it.'}
+          </p>
         </div>
       )}
 

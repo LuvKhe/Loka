@@ -107,8 +107,10 @@ export async function POST(request: Request) {
     const recoveryCode = generateRecoveryCode()
     const recoveryHash = hashRecoveryCode(recoveryCode)
 
-    // Determine university from campus (placeholder — will be user-selected in Phase 4)
-    const university = 'My University'
+    // Default campus — all users start on the main campus.
+    // Will become user-selectable in a future update.
+    const DEFAULT_CAMPUS_ID = 'a0000000-0000-0000-0000-000000000001'
+    const university = 'University of Eswatini'
 
     // Insert profile
     const { error: profileError } = await supabase.from('profiles').insert({
@@ -116,9 +118,11 @@ export async function POST(request: Request) {
       display_name: displayName.trim(),
       loka_id: lokaId,
       university,
+      campus_id: DEFAULT_CAMPUS_ID,
     })
 
     if (profileError) {
+      console.error('Profile insert error:', JSON.stringify(profileError))
       return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 })
     }
 
@@ -150,7 +154,7 @@ export async function POST(request: Request) {
     // The client will display it once and discard it.
     return NextResponse.json({ lokaId, recoveryCode })
   } catch (err) {
-    console.error('Onboarding setup error:', err)
+    console.error('Onboarding setup error:', JSON.stringify(err), err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

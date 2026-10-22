@@ -37,12 +37,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from onboarding
-  if (user && isOnboarding) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
-  }
+  // Don't redirect authenticated users away from onboarding —
+  // they may not have a profile yet. The onboarding page handles its own flow.
 
   return supabaseResponse
 }
