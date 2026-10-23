@@ -1,157 +1,167 @@
-// Friend profile screen — shows a friend's public info and status
+// Home screen — "What's happening with me and my friends right now?"
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import StatusBadge from '@/components/ui/StatusBadge'
+import { redirect } from 'next/navigation'
+import HomeClient from './HomeClient'
 import { computeTimetableState } from '@loka/shared/timetable'
-import type { TimetableEntry } from '@loka/shared/types'
+import type { TimetableEntry, Profile, PrivacySettings } from '@loka/shared/types'
 
-interface Props {
-  params: { id: string }
+interface ActiveLocation {
+  placeLabel: string
+  campusBuildingId: string | null
 }
 
-export default async function FriendProfilePage({ params }: Props) {
+function mapProfile(row: Record<string, unknown>): Profile {
+  return {
+    id: row.id as string,
+    displayName: row.display_name as string,
+    avatarUrl: (row.avatar_url as string | null) ?? null,
+    university: (row.university as string) ?? '',
+    campusId: (row.campus_id as string) ?? '',
+    lokaId: row.loka_id as string,
+    statusOverride: (row.status_override as 'free' | null) ?? null,
+    statusOverrideSetAt: (row.status_override_set_at as string | null) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
+function mapPrivacy(row: Record<string, unknown>): PrivacySettings {
+  return {
+    userId: row.user_id as string,
+    shareLocation: row.share_location as boolean,
+    shareCurrentClass: row.share_current_class as boolean,
+    shareNextClass: row.share_next_class as boolean,
+    showInSearch: row.show_in_search as boolean,
+    updatedAt: row.updated_at as string,
+  }
+}
+
+function mapEntry(e: Record<string, unknown>): TimetableEntry {
+  return {
+    id: e.id as string,
+    userId: e.user_id as string,
+    dayOfWeek: e.day_of_week as TimetableEntry['dayOfWeek'],
+    startTime: e.start_time as string,
+    endTime: e.end_time as string,
+    subjectCode: e.subject_code as string,
+    subjectName: (e.subject_name as string | null) ?? null,
+    groupName: (e.group_name as string | null) ?? null,
+    venue: (e.venue as string | null) ?? null,
+    room: (e.room as string | null) ?? null,
+    lecturer: (e.lecturer as string | null) ?? null,
+    notes: (e.notes as string | null) ?? null,
+    isActive: e.is_active as boolean,
+    createdAt: e.created_at as string,
+    updatedAt: e.updated_at as string,
+  }
+}
+
+export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const friendId = params.id
+  const [profileRes, timetableRes, privacyRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('timetable_entries').select('*').eq('user_id', user.id).eq('is_active', true),
+    supabase.from('privacy_settings').select('*').eq('user_id', user.id).single(),
+  ])
 
-  // Verify friendship
-  const [userA, userB] = [user.id, friendId].sort()
-  const { data: friendship } = await supabase
+  const profile = profileRes.data ? mapProfile(profileRes.data) : null
+  if (!profile) redirect('/onboarding')
+
+  const timetableEntries = (timetableRes.data ?? []).map(mapEntry)
+  const privacySettings = privacyRes.data ? mapPrivacy(privacyRes.data) : null
+
+  const { data: locationRow } = await supabase
+    .from('active_locations')
+    .select('place_label, campus_building_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const activeLocation: ActiveLocation | null = locationRow
+    ? { placeLabel: locationRow.place_label, campusBuildingId: locationRow.campus_building_id ?? null }
+    : null
+
+  const { data: friendships } = await supabase
     .from('friendships')
-    .select('id')
-    .eq('user_a', userA)
-    .eq('user_b', userB)
-    .single()
+    .select('user_a, user_b')
+    .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
 
-  if (!friendship) notFound()
+  const friendIds = (friendships ?? []).map((f) =>
+    f.user_a === user.id ? f.user_b : f.user_a,
+  )
 
-  // Fetch friend's profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, display_name, loka_id, university, status_override')
-    .eq('id', friendId)
-    .single()
+  let friendsData: Array<{
+    id: string
+    displayName: string
+    status: string
+    currentClass: string | null
+  }> = []
 
-  if (!profile) notFound()
+  if (friendIds.length > 0) {
+    const [friendProfilesRes, friendTimetablesRes, friendPrivacyRes] = await Promise.all([
+      supabase.from('profiles').select('id, display_name, status_override').in('id', friendIds),
+      supabase.from('timetable_entries').select('*').in('user_id', friendIds).eq('is_active', true),
+      supabase.from('privacy_settings').select('user_id, share_current_class').in('user_id', friendIds),
+    ])
 
-  // Fetch friend's privacy settings
-  const { data: privacy } = await supabase
-    .from('privacy_settings')
-    .select('share_location, share_current_class, share_next_class')
-    .eq('user_id', friendId)
-    .single()
+    const friendProfiles = friendProfilesRes.data ?? []
+    const friendTimetables = (friendTimetablesRes.data ?? []).map(mapEntry)
+    const friendPrivacy = Object.fromEntries(
+      (friendPrivacyRes.data ?? []).map((p) => [p.user_id, p]),
+    )
 
-  // Fetch friend's active location if sharing is on
-  let friendLocation: string | null = null
-  if (privacy?.share_location) {
-    const { data: locationRow } = await supabase
-      .from('active_locations')
-      .select('place_label')
-      .eq('user_id', friendId)
-      .maybeSingle()
-    friendLocation = locationRow?.place_label ?? null
+    const entriesByUser: Record<string, TimetableEntry[]> = {}
+    for (const e of friendTimetables) {
+      if (!entriesByUser[e.userId]) entriesByUser[e.userId] = []
+      entriesByUser[e.userId]!.push(e)
+    }
+
+    const now = new Date()
+    friendsData = friendProfiles.map((fp) => {
+      const entries = entriesByUser[fp.id] ?? []
+      const state = computeTimetableState(entries, now, fp.status_override ?? null)
+      const privacy = friendPrivacy[fp.id]
+      const canSeeClass = privacy?.share_current_class !== false
+
+      let currentClass: string | null = null
+      if (canSeeClass && state.currentClass) {
+        currentClass = state.currentClass.subjectCode
+        if (state.currentClass.subjectName) {
+          currentClass += ` — ${state.currentClass.subjectName}`
+        }
+      }
+
+      return { id: fp.id, displayName: fp.display_name, status: state.status, currentClass }
+    })
+
+    const ORDER: Record<string, number> = {
+      free: 0, between_classes: 1, in_class: 2, no_classes_today: 3, weekend: 4, unknown: 5,
+    }
+    friendsData.sort((a, b) => (ORDER[a.status] ?? 5) - (ORDER[b.status] ?? 5))
   }
 
-  // Fetch friend's timetable if share_current_class is on
-  let timetableStatus: string = 'unknown'
-  let currentClass: string | null = null
-  let nextClass: string | null = null
+  let friendLocations: Record<string, string> = {}
+  if (friendIds.length > 0) {
+    const { data: locationRows } = await supabase
+      .from('active_locations')
+      .select('user_id, place_label')
+      .in('user_id', friendIds)
 
-  if (privacy?.share_current_class || privacy?.share_next_class) {
-    const { data: entries } = await supabase
-      .from('timetable_entries')
-      .select('*')
-      .eq('user_id', friendId)
-      .eq('is_active', true)
-
-    const mapped: TimetableEntry[] = (entries ?? []).map((e) => ({
-      id: e.id,
-      userId: e.user_id,
-      dayOfWeek: e.day_of_week,
-      startTime: e.start_time,
-      endTime: e.end_time,
-      subjectCode: e.subject_code,
-      subjectName: e.subject_name,
-      groupName: e.group_name,
-      venue: e.venue,
-      room: e.room,
-      lecturer: e.lecturer,
-      notes: e.notes,
-      isActive: e.is_active,
-      createdAt: e.created_at,
-      updatedAt: e.updated_at,
-    }))
-
-    const state = computeTimetableState(mapped, new Date(), profile.status_override)
-    timetableStatus = state.status
-
-    if (privacy.share_current_class && state.currentClass) {
-      currentClass = `${state.currentClass.subjectCode}${state.currentClass.subjectName ? ` — ${state.currentClass.subjectName}` : ''}`
-    }
-    if (privacy.share_next_class && state.nextClass) {
-      nextClass = `${state.nextClass.subjectCode}${state.nextClass.subjectName ? ` — ${state.nextClass.subjectName}` : ''}`
+    for (const row of locationRows ?? []) {
+      friendLocations[row.user_id] = row.place_label
     }
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center gap-3 pt-2">
-        <Link href="/friends" className="text-sm text-gray-400 p-1 -ml-1">
-          Back
-        </Link>
-        <h1 className="text-xl font-bold text-gray-900">Friend</h1>
-      </div>
-
-      {/* Identity card */}
-      <div className="loka-card">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <span className="text-blue-600 font-bold text-xl">
-              {(profile.display_name ?? '?')[0]?.toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="font-bold text-gray-900">{profile.display_name}</p>
-            {profile.university && (
-              <p className="text-sm text-gray-500">{profile.university}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <StatusBadge status={timetableStatus} />
-        </div>
-        {friendLocation && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400 mb-0.5">On campus</p>
-            <p className="text-sm text-gray-700">{friendLocation}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Class info */}
-      {(currentClass || nextClass) && (
-        <section>
-          <p className="loka-section-label">Schedule</p>
-          <div className="loka-card space-y-3">
-            {currentClass && (
-              <div>
-                <p className="text-xs text-gray-400">Now</p>
-                <p className="text-sm font-medium text-gray-900">{currentClass}</p>
-              </div>
-            )}
-            {nextClass && (
-              <div>
-                <p className="text-xs text-gray-400">Next</p>
-                <p className="text-sm font-medium text-gray-900">{nextClass}</p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-    </div>
+    <HomeClient
+      profile={profile}
+      timetableEntries={timetableEntries}
+      privacySettings={privacySettings}
+      friendsData={friendsData}
+      activeLocation={activeLocation}
+      friendLocations={friendLocations}
+    />
   )
 }
