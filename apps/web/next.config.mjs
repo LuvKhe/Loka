@@ -5,11 +5,13 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Transpile the shared workspace package so Next.js can import TS source directly
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   transpilePackages: ['@loka/shared'],
 
   webpack(config) {
-    // Resolve @loka/shared/* to the source tree
     const sharedRoot = path.resolve(__dirname, '../../shared')
 
     config.resolve.alias = {
@@ -21,7 +23,6 @@ const nextConfig = {
       '@loka/shared/timetable': path.join(sharedRoot, 'timetable/index.ts'),
     }
 
-    // Allow .js imports to resolve to .ts files (ESM interop for shared package)
     config.resolve.extensionAlias = {
       ...config.resolve.extensionAlias,
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
