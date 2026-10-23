@@ -222,7 +222,7 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                       <p className="text-xs text-gray-400 truncate">{friend.currentClass}</p>
                     )}
                   </div>
-                  {friendLocations[friend.id] && (
+                  {friendLocations[friend.id] ? (
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {friendLocations[friend.id]}
                     </p>
