@@ -26,7 +26,7 @@ export default function TermsPage() {
           shown once when you sign up. Keep it safe. Anyone with the code can restore your profile, and we cannot
           recover a lost code for you.
         </p>
-        <p>Choose a display name that is not misleading, abusive, or someone else's name.</p>
+        <p>Choose a display name that is not misleading, abusive, or someone else&apos;s name.</p>
       </LegalSection>
       <LegalSection title="Acceptable use">
         <p>You agree not to:</p>
@@ -34,7 +34,7 @@ export default function TermsPage() {
           <li>harass, stalk, threaten, or track anyone, or use Loka to find someone who does not want to be found;</li>
           <li>impersonate another person or misrepresent who you are;</li>
           <li>send friend requests in bulk, scrape data, or attempt to bypass limits or security controls;</li>
-          <li>probe, attack, or interfere with Loka or its infrastructure, or try to access other users' data;</li>
+          <li>probe, attack, or interfere with Loka or its infrastructure, or try to access other users&apos; data;</li>
           <li>use Loka for anything unlawful.</li>
         </ul>
       </LegalSection>

@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       </LegalSection>
       <LegalSection title="Location">
         <p>
-          Loka does not read your device's GPS. Your campus location is a building you pick yourself. We store only the
+          Loka does not read your device&apos;s GPS. Your campus location is a building you pick yourself. We store only the
           building label for your latest check-in, replace it each time you check in, and remove it when you leave campus
           or turn sharing off. We do not keep a history of where you have been.
         </p>

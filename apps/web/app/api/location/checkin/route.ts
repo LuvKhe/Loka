@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(_request: Request) {
+export async function DELETE() {
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
