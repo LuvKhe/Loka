@@ -1315,7 +1315,7 @@ export const UNESWA_PROGRAMMES: Programme[] = [
       ['PHY101', 'B', 1, '13:00', '15:50', 'S.1.27'],
       ['PHY101', 'C', 3, '14:00', '16:50', 'S.1.27'],
       ['PHY101', 'D', 2, '12:00', '14:50', 'S.1.27'],
-      ['PHY101', 'E', 4, '10:00', '11:50', 'S.1.27'],
+      ['PHY101', 'E', 4, '09:00', '11:50', 'S.1.27'],
       ['STA141', null, 1, '10:00', '10:50', 'MFAC Room 5'],
       ['STA141', null, 2, '14:00', '14:50', '(N1)'],
       ['STA141', null, 5, '16:00', '17:50', 'MFAC Room 4'],
@@ -1468,7 +1468,7 @@ export const UNESWA_PROGRAMMES: Programme[] = [
       ['PHY101', 'B', 1, '13:00', '15:50', 'S.1.27'],
       ['PHY101', 'C', 3, '14:00', '16:50', 'S.1.27'],
       ['PHY101', 'D', 2, '12:00', '14:50', 'S.1.27'],
-      ['PHY101', 'E', 4, '10:00', '11:50', 'S.1.27'],
+      ['PHY101', 'E', 4, '09:00', '11:50', 'S.1.27'],
     ]),
   },
   {
@@ -1986,10 +1986,33 @@ export function getModuleCodes(programmeId: string): string[] {
   return Array.from(new Set(prog.slots.map((s) => s.moduleCode))).sort()
 }
 
+let groupSlotsByModule: Map<string, ProgrammeSlot[]> | null = null
+
+function allGroupSlots(moduleCode: string): ProgrammeSlot[] {
+  if (!groupSlotsByModule) {
+    const map = new Map<string, ProgrammeSlot[]>()
+    const seen = new Set<string>()
+    for (const prog of UNESWA_PROGRAMMES) {
+      for (const slot of prog.slots) {
+        if (slot.group === null) continue
+        const key = `${slot.moduleCode}|${slot.group}|${slot.day}|${slot.startTime}|${slot.venue}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const list = map.get(slot.moduleCode) ?? []
+        list.push(slot)
+        map.set(slot.moduleCode, list)
+      }
+    }
+    groupSlotsByModule = map
+  }
+  return groupSlotsByModule.get(moduleCode) ?? []
+}
+
 export function getModuleSlots(programmeId: string, moduleCode: string): ProgrammeSlot[] {
   const prog = UNESWA_PROGRAMMES.find((p) => p.id === programmeId)
   if (!prog) return []
-  return prog.slots.filter((s) => s.moduleCode === moduleCode)
+  const lectures = prog.slots.filter((s) => s.moduleCode === moduleCode && s.group === null)
+  return [...lectures, ...allGroupSlots(moduleCode)]
 }
 
 export const DAY_LABELS: Record<number, string> = {
