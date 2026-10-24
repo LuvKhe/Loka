@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server'
 import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: Request) {
   try {
@@ -25,11 +26,11 @@ export async function POST(request: Request) {
     }
 
     // Verify the recipient exists
-    const { data: recipient } = await supabase
+    const { data: recipient } = await createAdminClient()
       .from('profiles')
       .select('id')
       .eq('id', toUserId)
-      .single()
+      .maybeSingle()
 
     if (!recipient) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       .select('id')
       .eq('user_a', userA)
       .eq('user_b', userB)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       return NextResponse.json({ error: 'Already friends' }, { status: 409 })
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
     })
 
     if (insertError) {
+      console.error('Friend request insert failed:', insertError.message)
       if (insertError.message.includes('duplicate')) {
         return NextResponse.json({ error: 'Request already sent' }, { status: 409 })
       }

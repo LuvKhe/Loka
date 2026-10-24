@@ -69,7 +69,10 @@ export default function AddFriendClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toUserId: state.profile.id }),
       })
-      if (!res.ok) throw new Error('Failed to send request')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to send request')
+      }
       setState({ kind: 'sent' })
     } catch (err) {
       setState({ kind: 'error', message: err instanceof Error ? err.message : 'Something went wrong' })
