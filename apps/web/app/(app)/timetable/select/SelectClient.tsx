@@ -11,13 +11,30 @@ import {
 
 type Phase = 'pick' | 'done'
 
+interface ModuleGroup {
+  name: string
+  slots: ProgrammeSlot[]
+}
+
+interface ModuleInfo {
+  code: string
+  year: number
+  slots: ProgrammeSlot[]
+  lectures: ProgrammeSlot[]
+  groups: ModuleGroup[]
+}
+
 function slotKey(slot: ProgrammeSlot) {
-  return `${slot.moduleCode}|${slot.day}|${slot.startTime}|${slot.venue}`
+  return `${slot.moduleCode}|${slot.group ?? ''}|${slot.day}|${slot.startTime}|${slot.venue}`
 }
 
 function yearOf(code: string): number {
   const digit = code.match(/\d/)?.[0]
   return digit ? Number(digit) : 0
+}
+
+function slotLabel(slot: ProgrammeSlot) {
+  return `${DAY_LABELS[slot.day]} ${slot.startTime}–${slot.endTime}`
 }
 
 export default function SelectClient() {
@@ -26,24 +43,41 @@ export default function SelectClient() {
   const [phase, setPhase] = useState<Phase>('pick')
   const [programmeId, setProgrammeId] = useState('')
   const [year, setYear] = useState<number | null>(null)
+  const [myGroup, setMyGroup] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [replaceExisting, setReplaceExisting] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const programme = UNESWA_PROGRAMMES.find((p) => p.id === programmeId)
 
-  const modules = useMemo(() => {
+  const modules: ModuleInfo[] = useMemo(() => {
     if (!programme) return []
     const codes = Array.from(new Set(programme.slots.map((s) => s.moduleCode))).sort()
-    return codes.map((code) => ({
-      code,
-      year: yearOf(code),
-      slots: getModuleSlots(programme.id, code),
-    }))
+    return codes.map((code) => {
+      const slots = getModuleSlots(programme.id, code)
+      const lectures = slots.filter((s) => !s.group)
+      const groupNames = Array.from(
+        new Set(slots.filter((s) => s.group).map((s) => s.group as string)),
+      ).sort()
+      const groups = groupNames.map((name) => ({
+        name,
+        slots: slots.filter((s) => s.group === name),
+      }))
+      return { code, year: yearOf(code), slots, lectures, groups }
+    })
   }, [programme])
 
   const years = useMemo(
     () => Array.from(new Set(modules.map((m) => m.year))).sort((a, b) => a - b),
+    [modules],
+  )
+
+  const groupLetters = useMemo(
+    () =>
+      Array.from(
+        new Set(modules.flatMap((m) => m.groups.map((g) => g.name))),
+      ).sort(),
     [modules],
   )
 
@@ -66,6 +100,7 @@ export default function SelectClient() {
   function handleProgrammeSelect(id: string) {
     setProgrammeId(id)
     setSelected(new Set())
+    setMyGroup(null)
     setError(null)
     const prog = UNESWA_PROGRAMMES.find((p) => p.id === id)
     if (!prog) {
@@ -74,6 +109,25 @@ export default function SelectClient() {
     }
     const ys = prog.slots.map((s) => yearOf(s.moduleCode)).sort((a, b) => a - b)
     setYear(ys[0] ?? null)
+  }
+
+  function chooseMyGroup(letter: string) {
+    const next = myGroup === letter ? null : letter
+    setMyGroup(next)
+    if (!next) return
+    setSelected((prev) => {
+      const updated = new Set(prev)
+      modules.forEach((m) => {
+        if (m.groups.length === 0) return
+        const enrolled = m.slots.some((s) => prev.has(slotKey(s)))
+        if (!enrolled) return
+        const match = m.groups.find((g) => g.name === next)
+        if (!match) return
+        m.groups.forEach((g) => g.slots.forEach((s) => updated.delete(slotKey(s))))
+        match.slots.forEach((s) => updated.add(slotKey(s)))
+      })
+      return updated
+    })
   }
 
   function toggleSlot(slot: ProgrammeSlot) {
@@ -86,11 +140,29 @@ export default function SelectClient() {
     })
   }
 
-  function toggleModule(slots: ProgrammeSlot[]) {
-    const allOn = slots.every((s) => selected.has(slotKey(s)))
+  function toggleModule(m: ModuleInfo) {
+    const enrolled = m.slots.some((s) => selected.has(slotKey(s)))
     setSelected((prev) => {
       const next = new Set(prev)
-      slots.forEach((s) => (allOn ? next.delete(slotKey(s)) : next.add(slotKey(s))))
+      if (enrolled) {
+        m.slots.forEach((s) => next.delete(slotKey(s)))
+      } else {
+        m.lectures.forEach((s) => next.add(slotKey(s)))
+        const match = myGroup ? m.groups.find((g) => g.name === myGroup) : undefined
+        match?.slots.forEach((s) => next.add(slotKey(s)))
+      }
+      return next
+    })
+  }
+
+  function chooseGroup(groups: ModuleGroup[], name: string) {
+    const chosen = groups.find((g) => g.name === name)
+    if (!chosen) return
+    const alreadyOn = chosen.slots.every((s) => selected.has(slotKey(s)))
+    setSelected((prev) => {
+      const next = new Set(prev)
+      groups.forEach((g) => g.slots.forEach((s) => next.delete(slotKey(s))))
+      if (!alreadyOn) chosen.slots.forEach((s) => next.add(slotKey(s)))
       return next
     })
   }
@@ -101,29 +173,33 @@ export default function SelectClient() {
     setError(null)
 
     try {
-      for (const slot of selectedSlots) {
-        const res = await fetch('/api/timetable', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      const res = await fetch('/api/timetable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          replace: replaceExisting,
+          entries: selectedSlots.map((slot) => ({
             subjectCode: slot.moduleCode,
             subjectName: null,
             dayOfWeek: slot.day,
             startTime: slot.startTime,
             endTime: slot.endTime,
-            groupName: programme?.name ?? null,
+            groupName: slot.group,
             venue: slot.venue,
-          }),
-        })
+          })),
+        }),
+      })
 
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          throw new Error(body.error ?? `Failed to save ${slot.moduleCode}`)
-        }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to save your timetable')
       }
 
       setPhase('done')
-      setTimeout(() => router.push('/timetable'), 1500)
+      setTimeout(() => {
+        router.push('/timetable')
+        router.refresh()
+      }, 1500)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -135,7 +211,7 @@ export default function SelectClient() {
     return (
       <div className="p-4">
         <div className="loka-card text-center py-8">
-          <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Classes added</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Timetable saved</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">Taking you to your timetable...</p>
         </div>
       </div>
@@ -143,11 +219,11 @@ export default function SelectClient() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-40">
+    <div className="p-4 space-y-4 pb-48">
       <div className="pt-2">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Add from Programme</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Pick your programme, then your year, then tick your modules
+          Pick your programme and group, then add your modules
         </p>
       </div>
 
@@ -168,6 +244,42 @@ export default function SelectClient() {
           </select>
         </div>
       </section>
+
+      {programme && groupLetters.length > 0 && (
+        <section>
+          <p className="loka-section-label">Your group</p>
+          <div className="loka-card">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Labs and practicals are split into groups. Pick yours and it is applied to every
+              module that has groups, so only your sessions appear on your timetable.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {groupLetters.map((letter) => {
+                const active = myGroup === letter
+                return (
+                  <button
+                    key={letter}
+                    onClick={() => chooseMyGroup(letter)}
+                    className={[
+                      'min-w-[3.25rem] px-4 py-2 rounded-lg text-sm font-semibold border transition-colors',
+                      active
+                        ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200',
+                    ].join(' ')}
+                  >
+                    {letter}
+                  </button>
+                )
+              })}
+            </div>
+            {!myGroup && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
+                Choose your group before adding modules.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {programme && years.length > 0 && (
         <section>
@@ -203,72 +315,119 @@ export default function SelectClient() {
           </p>
 
           <div className="space-y-3">
-            {visibleModules.map(({ code, slots }) => {
-              const allOn = slots.every((s) => selected.has(slotKey(s)))
-              const someOn = slots.some((s) => selected.has(slotKey(s)))
+            {visibleModules.map((m) => {
+              const { code, lectures, groups } = m
+              const enrolled = m.slots.some((s) => selected.has(slotKey(s)))
+              const groupChosen = groups.some((g) => g.slots.every((s) => selected.has(slotKey(s))))
+              const missingMyGroup =
+                myGroup !== null && groups.length > 0 && !groups.some((g) => g.name === myGroup)
 
               return (
                 <div key={code} className="loka-card">
-                  <button
-                    className="w-full flex items-center justify-between mb-2"
-                    onClick={() => toggleModule(slots)}
-                  >
+                  <div className="flex items-center justify-between mb-2">
                     <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{code}</p>
-                    <div
+                    <button
                       className={[
-                        'w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
-                        allOn
-                          ? 'bg-blue-500 border-blue-500'
-                          : someOn
-                          ? 'bg-blue-200 border-blue-300 dark:bg-blue-900 dark:border-blue-700'
-                          : 'border-gray-300 dark:border-gray-600',
+                        'text-xs font-medium px-3 py-1 rounded-lg border transition-colors',
+                        enrolled
+                          ? 'border-gray-300 text-gray-600 dark:border-slate-600 dark:text-gray-300'
+                          : 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500',
                       ].join(' ')}
+                      onClick={() => toggleModule(m)}
                     >
-                      {(allOn || someOn) && (
-                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-                          {allOn ? (
-                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          ) : (
-                            <path d="M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                          )}
-                        </svg>
+                      {enrolled ? 'Remove' : 'Add module'}
+                    </button>
+                  </div>
+
+                  {lectures.length > 0 && (
+                    <div className="space-y-1.5">
+                      {groups.length > 0 && (
+                        <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Lectures</p>
+                      )}
+                      {lectures.map((slot) => {
+                        const on = selected.has(slotKey(slot))
+                        return (
+                          <button
+                            key={slotKey(slot)}
+                            onClick={() => toggleSlot(slot)}
+                            className={[
+                              'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
+                              on ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-slate-700/40',
+                            ].join(' ')}
+                          >
+                            <div>
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                {slotLabel(slot)}
+                              </span>
+                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                                {slot.venue}
+                              </span>
+                            </div>
+                            <div
+                              className={[
+                                'w-4 h-4 rounded border-2 shrink-0 transition-colors',
+                                on ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600',
+                              ].join(' ')}
+                            />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {groups.length > 0 && (
+                    <div className={['space-y-1.5', lectures.length > 0 ? 'mt-3' : ''].join(' ')}>
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                        Group sessions
+                      </p>
+                      {groups.map((g) => {
+                        const on = g.slots.every((s) => selected.has(slotKey(s)))
+                        return (
+                          <button
+                            key={g.name}
+                            onClick={() => chooseGroup(groups, g.name)}
+                            className={[
+                              'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
+                              on ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-slate-700/40',
+                            ].join(' ')}
+                          >
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                                Group {g.name}
+                              </p>
+                              {g.slots.map((slot) => (
+                                <p
+                                  key={slotKey(slot)}
+                                  className="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+                                >
+                                  {slotLabel(slot)}
+                                  <span className="ml-2 text-gray-400 dark:text-gray-500">
+                                    {slot.venue}
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                            <div
+                              className={[
+                                'w-4 h-4 rounded-full border-2 shrink-0 transition-colors',
+                                on ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600',
+                              ].join(' ')}
+                            />
+                          </button>
+                        )
+                      })}
+                      {missingMyGroup && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Group {myGroup} is not offered for this module. Pick one of the groups above.
+                        </p>
+                      )}
+                      {enrolled && !groupChosen && !missingMyGroup && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Pick a group to finish this module
+                        </p>
                       )}
                     </div>
-                  </button>
-
-                  <div className="space-y-1.5">
-                    {slots.map((slot) => {
-                      const on = selected.has(slotKey(slot))
-                      return (
-                        <button
-                          key={slotKey(slot)}
-                          onClick={() => toggleSlot(slot)}
-                          className={[
-                            'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
-                            on ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-slate-700/40',
-                          ].join(' ')}
-                        >
-                          <div>
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              {DAY_LABELS[slot.day]}
-                            </span>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
-                              {slot.startTime}–{slot.endTime}
-                            </span>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
-                              {slot.venue}
-                            </span>
-                          </div>
-                          <div
-                            className={[
-                              'w-4 h-4 rounded-full border-2 shrink-0 transition-colors',
-                              on ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600',
-                            ].join(' ')}
-                          />
-                        </button>
-                      )
-                    })}
-                  </div>
+                  )}
                 </div>
               )
             })}
@@ -279,7 +438,15 @@ export default function SelectClient() {
       )}
 
       {selectedSlots.length > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 max-w-lg mx-auto px-4 pb-4 pt-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-gray-200 dark:border-slate-800">
+        <div className="fixed bottom-16 left-0 right-0 max-w-lg mx-auto px-4 pb-4 pt-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-gray-200 dark:border-slate-800 space-y-3">
+          <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={replaceExisting}
+              onChange={(e) => setReplaceExisting(e.target.checked)}
+            />
+            Replace my current timetable with this one
+          </label>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -287,7 +454,7 @@ export default function SelectClient() {
           >
             {saving
               ? 'Saving...'
-              : `Add ${selectedSlots.length} slot${selectedSlots.length === 1 ? '' : 's'} to timetable`}
+              : `Save ${selectedSlots.length} class${selectedSlots.length === 1 ? '' : 'es'} to timetable`}
           </button>
         </div>
       )}
