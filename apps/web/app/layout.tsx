@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import PersistStorage from '@/components/ui/PersistStorage'
 
 export const metadata: Metadata = {
   title: 'Loka',
@@ -47,6 +48,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-gray-50 dark:bg-slate-900">
+        <PersistStorage />
         {children}
       </body>
     </html>
