@@ -43,7 +43,6 @@ export default function SelectClient() {
   const [phase, setPhase] = useState<Phase>('pick')
   const [programmeId, setProgrammeId] = useState('')
   const [year, setYear] = useState<number | null>(null)
-  const [myGroup, setMyGroup] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [replaceExisting, setReplaceExisting] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -73,14 +72,6 @@ export default function SelectClient() {
     [modules],
   )
 
-  const groupLetters = useMemo(
-    () =>
-      Array.from(
-        new Set(modules.flatMap((m) => m.groups.map((g) => g.name))),
-      ).sort(),
-    [modules],
-  )
-
   const visibleModules = useMemo(
     () => modules.filter((m) => m.year === year),
     [modules, year],
@@ -100,7 +91,6 @@ export default function SelectClient() {
   function handleProgrammeSelect(id: string) {
     setProgrammeId(id)
     setSelected(new Set())
-    setMyGroup(null)
     setError(null)
     const prog = UNESWA_PROGRAMMES.find((p) => p.id === id)
     if (!prog) {
@@ -109,25 +99,6 @@ export default function SelectClient() {
     }
     const ys = prog.slots.map((s) => yearOf(s.moduleCode)).sort((a, b) => a - b)
     setYear(ys[0] ?? null)
-  }
-
-  function chooseMyGroup(letter: string) {
-    const next = myGroup === letter ? null : letter
-    setMyGroup(next)
-    if (!next) return
-    setSelected((prev) => {
-      const updated = new Set(prev)
-      modules.forEach((m) => {
-        if (m.groups.length === 0) return
-        const enrolled = m.slots.some((s) => prev.has(slotKey(s)))
-        if (!enrolled) return
-        const match = m.groups.find((g) => g.name === next)
-        if (!match) return
-        m.groups.forEach((g) => g.slots.forEach((s) => updated.delete(slotKey(s))))
-        match.slots.forEach((s) => updated.add(slotKey(s)))
-      })
-      return updated
-    })
   }
 
   function toggleSlot(slot: ProgrammeSlot) {
@@ -148,21 +119,22 @@ export default function SelectClient() {
         m.slots.forEach((s) => next.delete(slotKey(s)))
       } else {
         m.lectures.forEach((s) => next.add(slotKey(s)))
-        const match = myGroup ? m.groups.find((g) => g.name === myGroup) : undefined
-        match?.slots.forEach((s) => next.add(slotKey(s)))
       }
       return next
     })
   }
 
-  function chooseGroup(groups: ModuleGroup[], name: string) {
-    const chosen = groups.find((g) => g.name === name)
+  function chooseGroup(m: ModuleInfo, name: string) {
+    const chosen = m.groups.find((g) => g.name === name)
     if (!chosen) return
     const alreadyOn = chosen.slots.every((s) => selected.has(slotKey(s)))
     setSelected((prev) => {
       const next = new Set(prev)
-      groups.forEach((g) => g.slots.forEach((s) => next.delete(slotKey(s))))
-      if (!alreadyOn) chosen.slots.forEach((s) => next.add(slotKey(s)))
+      m.groups.forEach((g) => g.slots.forEach((s) => next.delete(slotKey(s))))
+      if (!alreadyOn) {
+        chosen.slots.forEach((s) => next.add(slotKey(s)))
+        m.lectures.forEach((s) => next.add(slotKey(s)))
+      }
       return next
     })
   }
@@ -223,7 +195,7 @@ export default function SelectClient() {
       <div className="pt-2">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Add from Programme</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Pick your programme and group, then add your modules
+          Pick your programme, add your modules, then choose your group for each
         </p>
       </div>
 
@@ -244,42 +216,6 @@ export default function SelectClient() {
           </select>
         </div>
       </section>
-
-      {programme && groupLetters.length > 0 && (
-        <section>
-          <p className="loka-section-label">Your group</p>
-          <div className="loka-card">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Labs and practicals are split into groups. Pick yours and it is applied to every
-              module that has groups, so only your sessions appear on your timetable.
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {groupLetters.map((letter) => {
-                const active = myGroup === letter
-                return (
-                  <button
-                    key={letter}
-                    onClick={() => chooseMyGroup(letter)}
-                    className={[
-                      'min-w-[3.25rem] px-4 py-2 rounded-lg text-sm font-semibold border transition-colors',
-                      active
-                        ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
-                        : 'bg-white border-gray-300 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200',
-                    ].join(' ')}
-                  >
-                    {letter}
-                  </button>
-                )
-              })}
-            </div>
-            {!myGroup && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-                Choose your group before adding modules.
-              </p>
-            )}
-          </div>
-        </section>
-      )}
 
       {programme && years.length > 0 && (
         <section>
@@ -318,9 +254,7 @@ export default function SelectClient() {
             {visibleModules.map((m) => {
               const { code, lectures, groups } = m
               const enrolled = m.slots.some((s) => selected.has(slotKey(s)))
-              const groupChosen = groups.some((g) => g.slots.every((s) => selected.has(slotKey(s))))
-              const missingMyGroup =
-                myGroup !== null && groups.length > 0 && !groups.some((g) => g.name === myGroup)
+              const chosenGroup = groups.find((g) => g.slots.every((s) => selected.has(slotKey(s))))
 
               return (
                 <div key={code} className="loka-card">
@@ -376,55 +310,49 @@ export default function SelectClient() {
                   )}
 
                   {groups.length > 0 && (
-                    <div className={['space-y-1.5', lectures.length > 0 ? 'mt-3' : ''].join(' ')}>
-                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500">
-                        Group sessions
+                    <div className={lectures.length > 0 ? 'mt-3' : ''}>
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">
+                        Your group for {code}
                       </p>
-                      {groups.map((g) => {
-                        const on = g.slots.every((s) => selected.has(slotKey(s)))
-                        return (
-                          <button
-                            key={g.name}
-                            onClick={() => chooseGroup(groups, g.name)}
-                            className={[
-                              'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
-                              on ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-slate-700/40',
-                            ].join(' ')}
-                          >
-                            <div>
-                              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                                Group {g.name}
-                              </p>
-                              {g.slots.map((slot) => (
-                                <p
-                                  key={slotKey(slot)}
-                                  className="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
-                                >
-                                  {slotLabel(slot)}
-                                  <span className="ml-2 text-gray-400 dark:text-gray-500">
-                                    {slot.venue}
-                                  </span>
-                                </p>
-                              ))}
-                            </div>
-                            <div
+                      <div className="flex gap-2 flex-wrap">
+                        {groups.map((g) => {
+                          const on = chosenGroup?.name === g.name
+                          return (
+                            <button
+                              key={g.name}
+                              onClick={() => chooseGroup(m, g.name)}
                               className={[
-                                'w-4 h-4 rounded-full border-2 shrink-0 transition-colors',
-                                on ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600',
+                                'min-w-[3rem] px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors',
+                                on
+                                  ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                                  : 'bg-white border-gray-300 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200',
                               ].join(' ')}
-                            />
-                          </button>
+                            >
+                              {g.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {chosenGroup ? (
+                        <div className="mt-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 px-3 py-2 space-y-0.5">
+                          {chosenGroup.slots.map((slot) => (
+                            <p
+                              key={slotKey(slot)}
+                              className="text-xs text-gray-700 dark:text-gray-300"
+                            >
+                              {slotLabel(slot)}
+                              <span className="ml-2 text-gray-400 dark:text-gray-500">
+                                {slot.venue}
+                              </span>
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        enrolled && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                            Pick your group to finish this module
+                          </p>
                         )
-                      })}
-                      {missingMyGroup && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Group {myGroup} is not offered for this module. Pick one of the groups above.
-                        </p>
-                      )}
-                      {enrolled && !groupChosen && !missingMyGroup && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Pick a group to finish this module
-                        </p>
                       )}
                     </div>
                   )}
