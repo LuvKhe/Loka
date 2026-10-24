@@ -41,13 +41,13 @@ const GROUPS: { label: string; prefix: string }[] = [
   { label: 'Materials Science',    prefix: 'Materials' },
   { label: 'SC Lecture Theatres',  prefix: 'SC Lecture' },
   { label: 'MFAC',                 prefix: 'MFAC' },
+  { label: 'Other Venues',         prefix: 'Venue' },
 ]
 
 function groupBuildings(buildings: Building[]): { label: string; items: Building[] }[] {
   const grouped: Map<string, Building[]> = new Map()
-  grouped.set('Other', [])
-
   for (const g of GROUPS) grouped.set(g.label, [])
+  grouped.set('Other', [])
 
   for (const b of buildings) {
     let placed = false

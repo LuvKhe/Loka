@@ -84,10 +84,17 @@ describe('computeTimetableState', () => {
       expect(state.nextClass?.dayOfWeek).toBe(2)
     })
 
-    it('returns null when no future classes exist', () => {
-      const now = makeDate(1, 16, 0) // Monday 16:00, only Monday classes
-      const state = computeTimetableState([MON_CSC, MON_MAT], now, null)
+    it('returns null when there are no classes at all', () => {
+      const now = makeDate(1, 16, 0)
+      const state = computeTimetableState([], now, null)
       expect(state.nextClass).toBeNull()
+    })
+
+    it('wraps to the same weekday next week when only that day has classes', () => {
+      const now = makeDate(1, 16, 0)
+      const state = computeTimetableState([MON_CSC, MON_MAT], now, null)
+      expect(state.nextClass?.subjectCode).toBe('CSC111')
+      expect(state.nextClass?.dayOfWeek).toBe(1)
     })
   })
 
@@ -166,6 +173,22 @@ describe('computeTimetableState', () => {
       const now = makeDate(1, 12, 0) // CSC ends, MAT starts at 13:00 = 60 min
       const state = computeTimetableState([MON_CSC, MON_MAT], now, null)
       expect(state.timeUntilNextSeconds).toBe(60 * 60)
+    })
+
+    it('counts the whole way to a class on a later day', () => {
+      const now = makeDate(1, 16, 0) // Monday 16:00, PHY101 Tuesday
+      const state = computeTimetableState([MON_CSC, MON_MAT, TUE_PHY], now, null)
+      const tueStart = TUE_PHY.startTime.split(':').map(Number)
+      const expected = (24 * 60 + tueStart[0] * 60 + tueStart[1] - 16 * 60) * 60
+      expect(state.timeUntilNextSeconds).toBe(expected)
+    })
+
+    it('counts across the weekend to Monday', () => {
+      const now = makeDate(6, 12, 0) // Saturday 12:00
+      const state = computeTimetableState([MON_CSC], now, null)
+      const monStart = MON_CSC.startTime.split(':').map(Number)
+      const expected = (2 * 24 * 60 + monStart[0] * 60 + monStart[1] - 12 * 60) * 60
+      expect(state.timeUntilNextSeconds).toBe(expected)
     })
   })
 

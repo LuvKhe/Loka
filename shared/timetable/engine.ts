@@ -27,6 +27,17 @@ function currentMinutes(now: Date): number {
   return now.getHours() * 60 + now.getMinutes()
 }
 
+function secondsUntilClass(
+  entry: TimetableEntry,
+  fromDow: DayOfWeek,
+  fromMinutes: number,
+): number {
+  const dayOffset = (entry.dayOfWeek - fromDow + 7) % 7
+  let minutes = dayOffset * 24 * 60 + parseTime(entry.startTime) - fromMinutes
+  if (minutes <= 0) minutes += 7 * 24 * 60
+  return minutes * 60
+}
+
 /**
  * Core timetable engine.
  *
@@ -73,7 +84,7 @@ export function computeTimetableState(
       nextClass,
       timeRemainingSeconds: null,
       timeUntilNextSeconds: nextClass
-        ? (parseTime(nextClass.startTime) - nowMinutes) * 60
+        ? secondsUntilClass(nextClass, todayDow, nowMinutes)
         : null,
       isManualOverride: false,
     }
@@ -125,15 +136,7 @@ export function computeTimetableState(
     : null
 
   const timeUntilNextSeconds = nextClass
-    ? (() => {
-        const nextStart = parseTime(nextClass.startTime)
-        // If next class is today
-        if (nextClass.dayOfWeek === todayDow) {
-          return (nextStart - nowMinutes) * 60
-        }
-        // Next class is on a future day — return null (too far ahead to count down)
-        return null
-      })()
+    ? secondsUntilClass(nextClass, todayDow, nowMinutes)
     : null
 
   return {
@@ -156,7 +159,7 @@ function findNextClass(
   fromMinutes: number,
   skipToday = false,
 ): TimetableEntry | null {
-  for (let offset = skipToday ? 1 : 0; offset < 7; offset++) {
+  for (let offset = skipToday ? 1 : 0; offset <= 7; offset++) {
     const targetDow = (((fromDow - 1 + offset) % 7) + 1) as DayOfWeek
     const dayEntries = entries
       .filter((e) => e.dayOfWeek === targetDow)
@@ -190,7 +193,7 @@ export function formatDuration(seconds: number): string {
 
 /** Format "HH:MM" to "14:00" (already is, but ensures no leading zero on hours if desired) */
 export function formatTime(hhmm: string): string {
-  return hhmm // keep 24h format
+  return hhmm.slice(0, 5)
 }
 
 /** Seconds since lastUpdatedAt ISO string → staleness label */

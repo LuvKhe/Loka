@@ -95,8 +95,8 @@ export default async function TimetablePage() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="shrink-0 text-right min-w-[4rem]">
-                      <p className="text-xs font-mono text-gray-500">{entry.startTime}</p>
-                      <p className="text-xs font-mono text-gray-400">{entry.endTime}</p>
+                      <p className="text-xs font-mono text-gray-500">{entry.startTime.slice(0, 5)}</p>
+                      <p className="text-xs font-mono text-gray-400">{entry.endTime.slice(0, 5)}</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm text-gray-900">{entry.subjectCode}</p>

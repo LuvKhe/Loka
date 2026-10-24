@@ -9,6 +9,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import CheckInPanel from '@/components/location/CheckInPanel'
 
+const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 interface FriendStatus {
   id: string
   displayName: string
@@ -90,7 +92,7 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
     <div className="p-4 space-y-4">
       {/* Header */}
       <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Floka</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Loka</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
@@ -140,15 +142,13 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                 {formatTime(state.nextClass.startTime)}
                 {state.nextClass.venue && ` · ${state.nextClass.venue}`}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {state.timeUntilNextSeconds != null
-                  ? `In ${formatDuration(state.timeUntilNextSeconds)}`
-                  : (() => {
-                      const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                      return DAY_NAMES[state.nextClass!.dayOfWeek] ?? ''
-                    })()
-                }
-              </p>
+              {state.timeUntilNextSeconds != null && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {state.timeUntilNextSeconds >= 24 * 60 * 60
+                    ? DAY_NAMES[state.nextClass.dayOfWeek]
+                    : `In ${formatDuration(state.timeUntilNextSeconds)}`}
+                </p>
+              )}
             </div>
           )}
 
