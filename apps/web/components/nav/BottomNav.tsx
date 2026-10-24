@@ -73,8 +73,10 @@ export default function BottomNav() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800
-                    max-w-lg mx-auto">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg transform-gpu bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)', WebkitTransform: 'translateZ(0)' }}
+    >
       <div className="flex">
         {items.map((item) => {
           const isActive = item.href === '/home'
@@ -101,8 +103,6 @@ export default function BottomNav() {
           )
         })}
       </div>
-      {/* iOS safe area */}
-      <div className="h-safe-area-inset-bottom bg-white dark:bg-slate-900" />
     </nav>
   )
 }
