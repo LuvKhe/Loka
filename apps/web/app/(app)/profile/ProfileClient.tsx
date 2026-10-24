@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Profile, PrivacySettings } from '@loka/shared/types'
 import QRCodeDisplay from '@/components/ui/QRCodeDisplay'
 import PrivacySettingsPanel from '@/components/profile/PrivacySettingsPanel'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface Props {
   profile: Profile | null
@@ -53,8 +54,8 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
         <div className="bg-gray-50 rounded-lg p-3 mb-3">
           <p className="text-xs text-gray-400 mb-1">Loka ID</p>
           <div className="flex items-center justify-between gap-2">
-            <p className="font-mono font-bold text-gray-900 text-lg tracking-widest">
-              {profile.lokaId}
+            <p className="font-mono font-bold text-gray-900 text-xl">
+              {profile.lokaId || '—'}
             </p>
             <button
               onClick={copyLokaId}
@@ -83,6 +84,11 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
           </div>
         )}
       </div>
+
+      <section>
+        <p className="loka-section-label">Appearance</p>
+        <ThemeToggle />
+      </section>
 
       {/* Privacy settings */}
       <section>

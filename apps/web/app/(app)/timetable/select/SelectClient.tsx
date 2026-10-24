@@ -9,48 +9,76 @@ import {
   type ProgrammeSlot,
 } from '@/lib/uneswa-timetable'
 
-type Phase = 'programme' | 'modules' | 'saving' | 'done'
+type Phase = 'pick' | 'done'
 
 function slotKey(slot: ProgrammeSlot) {
   return `${slot.moduleCode}|${slot.day}|${slot.startTime}|${slot.venue}`
 }
 
+function yearOf(code: string): number {
+  const digit = code.match(/\d/)?.[0]
+  return digit ? Number(digit) : 0
+}
+
 export default function SelectClient() {
   const router = useRouter()
 
-  const [phase, setPhase] = useState<Phase>('programme')
+  const [phase, setPhase] = useState<Phase>('pick')
   const [programmeId, setProgrammeId] = useState('')
-  const [deselected, setDeselected] = useState<Set<string>>(new Set())
+  const [year, setYear] = useState<number | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const programme = UNESWA_PROGRAMMES.find((p) => p.id === programmeId)
 
-  const moduleList = useMemo(() => {
+  const modules = useMemo(() => {
     if (!programme) return []
     const codes = Array.from(new Set(programme.slots.map((s) => s.moduleCode))).sort()
     return codes.map((code) => ({
       code,
+      year: yearOf(code),
       slots: getModuleSlots(programme.id, code),
     }))
   }, [programme])
 
-  const allSlots = useMemo(() => moduleList.flatMap((m) => m.slots), [moduleList])
+  const years = useMemo(
+    () => Array.from(new Set(modules.map((m) => m.year))).sort((a, b) => a - b),
+    [modules],
+  )
+
+  const visibleModules = useMemo(
+    () => modules.filter((m) => m.year === year),
+    [modules, year],
+  )
 
   const selectedSlots = useMemo(
-    () => allSlots.filter((s) => !deselected.has(slotKey(s))),
-    [allSlots, deselected],
+    () => modules.flatMap((m) => m.slots).filter((s) => selected.has(slotKey(s))),
+    [modules, selected],
   )
+
+  function countForYear(y: number) {
+    return modules
+      .filter((m) => m.year === y)
+      .reduce((n, m) => n + m.slots.filter((s) => selected.has(slotKey(s))).length, 0)
+  }
 
   function handleProgrammeSelect(id: string) {
     setProgrammeId(id)
-    setDeselected(new Set())
-    if (id) setPhase('modules')
+    setSelected(new Set())
+    setError(null)
+    const prog = UNESWA_PROGRAMMES.find((p) => p.id === id)
+    if (!prog) {
+      setYear(null)
+      return
+    }
+    const ys = prog.slots.map((s) => yearOf(s.moduleCode)).sort((a, b) => a - b)
+    setYear(ys[0] ?? null)
   }
 
   function toggleSlot(slot: ProgrammeSlot) {
     const key = slotKey(slot)
-    setDeselected((prev) => {
+    setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
       else next.add(key)
@@ -58,15 +86,11 @@ export default function SelectClient() {
     })
   }
 
-  function toggleModule(code: string, slots: ProgrammeSlot[]) {
-    const allSelected = slots.every((s) => !deselected.has(slotKey(s)))
-    setDeselected((prev) => {
+  function toggleModule(slots: ProgrammeSlot[]) {
+    const allOn = slots.every((s) => selected.has(slotKey(s)))
+    setSelected((prev) => {
       const next = new Set(prev)
-      if (allSelected) {
-        slots.forEach((s) => next.add(slotKey(s)))
-      } else {
-        slots.forEach((s) => next.delete(slotKey(s)))
-      }
+      slots.forEach((s) => (allOn ? next.delete(slotKey(s)) : next.add(slotKey(s))))
       return next
     })
   }
@@ -119,11 +143,11 @@ export default function SelectClient() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-32">
+    <div className="p-4 space-y-4 pb-40">
       <div className="pt-2">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Add from Programme</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Select your UNESWA programme to load all class times
+          Pick your programme, then your year, then tick your modules
         </p>
       </div>
 
@@ -145,110 +169,117 @@ export default function SelectClient() {
         </div>
       </section>
 
-      {phase === 'modules' && programme && (
-        <>
-          <section>
-            <div className="flex items-center justify-between mb-2">
-              <p className="loka-section-label mb-0">
-                Modules — {selectedSlots.length} slot{selectedSlots.length === 1 ? '' : 's'} selected
-              </p>
-              <button
-                className="text-xs text-blue-500"
-                onClick={() => {
-                  if (deselected.size === 0) {
-                    setDeselected(new Set(allSlots.map(slotKey)))
-                  } else {
-                    setDeselected(new Set())
-                  }
-                }}
-              >
-                {deselected.size === 0 ? 'Deselect all' : 'Select all'}
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {moduleList.map(({ code, slots }) => {
-                const allSelected = slots.every((s) => !deselected.has(slotKey(s)))
-                const someSelected = slots.some((s) => !deselected.has(slotKey(s)))
-
-                return (
-                  <div key={code} className="loka-card">
-                    <button
-                      className="w-full flex items-center justify-between mb-2"
-                      onClick={() => toggleModule(code, slots)}
-                    >
-                      <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{code}</p>
-                      <div
-                        className={[
-                          'w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
-                          allSelected
-                            ? 'bg-blue-500 border-blue-500'
-                            : someSelected
-                            ? 'bg-blue-200 border-blue-300 dark:bg-blue-900 dark:border-blue-700'
-                            : 'border-gray-300 dark:border-gray-600',
-                        ].join(' ')}
-                      >
-                        {(allSelected || someSelected) && (
-                          <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-                            {allSelected ? (
-                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            ) : (
-                              <path d="M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            )}
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-
-                    <div className="space-y-1.5">
-                      {slots.map((slot) => {
-                        const selected = !deselected.has(slotKey(slot))
-                        return (
-                          <button
-                            key={slotKey(slot)}
-                            onClick={() => toggleSlot(slot)}
-                            className={[
-                              'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
-                              selected
-                                ? 'bg-blue-50 dark:bg-blue-900/30'
-                                : 'bg-gray-50 dark:bg-gray-800/50',
-                            ].join(' ')}
-                          >
-                            <div>
-                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                {DAY_LABELS[slot.day]}
-                              </span>
-                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
-                                {slot.startTime}–{slot.endTime}
-                              </span>
-                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
-                                {slot.venue}
-                              </span>
-                            </div>
-                            <div
-                              className={[
-                                'w-4 h-4 rounded-full border-2 shrink-0 transition-colors',
-                                selected
-                                  ? 'bg-blue-500 border-blue-500'
-                                  : 'border-gray-300 dark:border-gray-600',
-                              ].join(' ')}
-                            />
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </>
+      {programme && years.length > 0 && (
+        <section>
+          <p className="loka-section-label">Year of study</p>
+          <div className="flex gap-2 flex-wrap">
+            {years.map((y) => {
+              const active = y === year
+              const count = countForYear(y)
+              return (
+                <button
+                  key={y}
+                  onClick={() => setYear(y)}
+                  className={[
+                    'px-4 py-2 rounded-lg text-sm font-medium border transition-colors',
+                    active
+                      ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                      : 'bg-white border-gray-300 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200',
+                  ].join(' ')}
+                >
+                  Year {y}
+                  {count > 0 && <span className="ml-1.5 opacity-80">({count})</span>}
+                </button>
+              )
+            })}
+          </div>
+        </section>
       )}
 
-      {phase === 'modules' && selectedSlots.length > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 pt-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-t border-gray-200 dark:border-gray-800">
+      {programme && year !== null && (
+        <section>
+          <p className="loka-section-label">
+            Year {year} modules — {visibleModules.length}
+          </p>
+
+          <div className="space-y-3">
+            {visibleModules.map(({ code, slots }) => {
+              const allOn = slots.every((s) => selected.has(slotKey(s)))
+              const someOn = slots.some((s) => selected.has(slotKey(s)))
+
+              return (
+                <div key={code} className="loka-card">
+                  <button
+                    className="w-full flex items-center justify-between mb-2"
+                    onClick={() => toggleModule(slots)}
+                  >
+                    <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{code}</p>
+                    <div
+                      className={[
+                        'w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors',
+                        allOn
+                          ? 'bg-blue-500 border-blue-500'
+                          : someOn
+                          ? 'bg-blue-200 border-blue-300 dark:bg-blue-900 dark:border-blue-700'
+                          : 'border-gray-300 dark:border-gray-600',
+                      ].join(' ')}
+                    >
+                      {(allOn || someOn) && (
+                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                          {allOn ? (
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          ) : (
+                            <path d="M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          )}
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+
+                  <div className="space-y-1.5">
+                    {slots.map((slot) => {
+                      const on = selected.has(slotKey(slot))
+                      return (
+                        <button
+                          key={slotKey(slot)}
+                          onClick={() => toggleSlot(slot)}
+                          className={[
+                            'w-full text-left flex items-center justify-between rounded-lg px-3 py-2 transition-colors',
+                            on ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-slate-700/40',
+                          ].join(' ')}
+                        >
+                          <div>
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {DAY_LABELS[slot.day]}
+                            </span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                              {slot.startTime}–{slot.endTime}
+                            </span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                              {slot.venue}
+                            </span>
+                          </div>
+                          <div
+                            className={[
+                              'w-4 h-4 rounded-full border-2 shrink-0 transition-colors',
+                              on ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600',
+                            ].join(' ')}
+                          />
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
+        </section>
+      )}
+
+      {selectedSlots.length > 0 && (
+        <div className="fixed bottom-16 left-0 right-0 max-w-lg mx-auto px-4 pb-4 pt-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-gray-200 dark:border-slate-800">
           <button
             onClick={handleSave}
             disabled={saving}

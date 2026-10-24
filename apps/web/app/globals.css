@@ -34,8 +34,7 @@
   --color-danger-light: #FEE2E2; /* red-100 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+.dark {
     --color-primary:        #3B82F6;
     --color-primary-light:  #1E3A8A;
     --color-primary-dark:   #60A5FA;
@@ -56,8 +55,16 @@
 
     --color-danger:       #EF4444;
     --color-danger-light: #7F1D1D;
-  }
 }
+
+.dark .bg-white { background-color: #1E293B; }
+.dark .bg-gray-50 { background-color: #0F172A; }
+.dark .hover\:bg-gray-50:hover { background-color: #334155; }
+.dark .border-gray-100, .dark .border-gray-200 { border-color: #334155; }
+.dark .text-gray-900 { color: #F1F5F9; }
+.dark .text-gray-700, .dark .text-gray-600 { color: #CBD5E1; }
+.dark .text-gray-500 { color: #94A3B8; }
+.dark .text-gray-400 { color: #64748B; }
 
 @layer base {
   body {
