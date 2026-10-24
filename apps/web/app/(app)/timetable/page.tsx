@@ -58,8 +58,8 @@ export default async function TimetablePage() {
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-xl font-bold text-gray-900">Timetable</h1>
         <div className="flex gap-2">
-          <Link href="/timetable/scan" className="loka-btn-secondary py-2 px-3 text-xs">
-            Scan
+          <Link href="/timetable/select" className="loka-btn-secondary py-2 px-3 text-xs">
+            Browse
           </Link>
           <Link href="/timetable/new" className="loka-btn-primary py-2 px-3 text-xs">
             Add Class
@@ -71,14 +71,14 @@ export default async function TimetablePage() {
         <div className="loka-card">
           <p className="font-medium text-gray-900 text-sm mb-1">No classes yet</p>
           <p className="text-sm text-gray-400 mb-3">
-            Add your classes manually or scan your timetable image.
+            Browse official UNESWA class times by programme, or add a class manually.
           </p>
-          <div className="flex gap-2">
-            <Link href="/timetable/new" className="loka-btn-primary py-2 px-3 text-xs">
-              Add manually
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/timetable/select" className="loka-btn-primary py-2 px-3 text-xs">
+              Browse by programme
             </Link>
-            <Link href="/timetable/scan" className="loka-btn-secondary py-2 px-3 text-xs">
-              Scan image
+            <Link href="/timetable/new" className="loka-btn-secondary py-2 px-3 text-xs">
+              Add manually
             </Link>
           </div>
         </div>
