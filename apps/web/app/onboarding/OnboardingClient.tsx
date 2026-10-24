@@ -41,9 +41,12 @@ export default function OnboardingClient() {
       const supabase = createClient()
 
       // 1. Sign in anonymously — creates a new anonymous user session
-      const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
-      if (authError || !authData.user) {
-        throw new Error(authError?.message ?? 'Authentication failed')
+      const { data: existing } = await supabase.auth.getSession()
+      if (!existing.session) {
+        const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
+        if (authError || !authData.user) {
+          throw new Error(authError?.message ?? 'Authentication failed')
+        }
       }
 
       // 2. Call the profile setup Edge Function, which:

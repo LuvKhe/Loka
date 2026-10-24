@@ -12,7 +12,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .from('profiles')
       .select('terms_version')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (!error && !profile) {
+      redirect('/onboarding')
+    }
 
     if (!error && profile && profile.terms_version !== TERMS_VERSION) {
       redirect('/accept-terms')
