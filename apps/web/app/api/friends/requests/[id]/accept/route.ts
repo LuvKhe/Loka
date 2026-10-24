@@ -1,10 +1,7 @@
-// POST /api/friends/requests/[id]/accept
-// Accepts a pending friend request and creates a friendship.
-// The canonicalized friendship row (user_a < user_b) is inserted by the DB
-// trigger or manually here, and the request status is updated to 'accepted'.
-
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { rateLimited } from '@/lib/rate-limit'
 
 export async function POST(
   _request: Request,
@@ -18,47 +15,26 @@ export async function POST(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const requestId = params.id
+    const limited = await rateLimited(user.id, 'friend_accept', 30, 60)
+    if (limited) return limited
 
-    // Fetch the request — must be to_user_id = current user and status = pending
-    const { data: req, error: fetchError } = await supabase
-      .from('friend_requests')
-      .select('id, from_user_id, to_user_id, status')
-      .eq('id', requestId)
-      .eq('to_user_id', user.id)
-      .eq('status', 'pending')
-      .single()
-
-    if (fetchError || !req) {
-      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
-    }
-
-    // Update request to 'accepted'
-    const { error: updateError } = await supabase
-      .from('friend_requests')
-      .update({ status: 'accepted' })
-      .eq('id', requestId)
-
-    if (updateError) {
-      return NextResponse.json({ error: 'Failed to accept request' }, { status: 500 })
-    }
-
-    // Create friendship with canonical ordering (user_a < user_b)
-    const [userA, userB] = [req.from_user_id, req.to_user_id].sort()
-    const { error: friendshipError } = await supabase.from('friendships').insert({
-      user_a: userA,
-      user_b: userB,
+    const admin = createAdminClient()
+    const { error } = await admin.rpc('accept_friend_request', {
+      p_request_id: params.id,
+      p_user_id: user.id,
     })
 
-    if (friendshipError) {
-      // Friendship may already exist (idempotent)
-      if (!friendshipError.message.includes('duplicate')) {
-        return NextResponse.json({ error: 'Failed to create friendship' }, { status: 500 })
+    if (error) {
+      console.error('Accept friend request failed:', error.message)
+      if (error.message.includes('friend_request_not_found')) {
+        return NextResponse.json({ error: 'Request not found' }, { status: 404 })
       }
+      return NextResponse.json({ error: 'Failed to create friendship' }, { status: 500 })
     }
 
-    return NextResponse.redirect(new URL('/friends', _request.url))
-  } catch {
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('Accept friend request error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
