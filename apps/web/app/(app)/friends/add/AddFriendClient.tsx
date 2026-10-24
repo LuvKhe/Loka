@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { validateLokaId } from '@loka/shared/validation'
+import { useToast } from '@/components/ui/Toast'
 
 type SearchState =
   | { kind: 'idle' }
@@ -15,6 +16,7 @@ type SearchState =
   | { kind: 'request_pending'; direction: 'outgoing' | 'incoming' }
 
 export default function AddFriendClient() {
+  const { show } = useToast()
   const router = useRouter()
   const [lokaId, setLokaId] = useState('')
   const [idError, setIdError] = useState<string | null>(null)
@@ -57,7 +59,9 @@ export default function AddFriendClient() {
         setState({ kind: 'found', profile: data.profile })
       }
     } catch (err) {
-      setState({ kind: 'error', message: err instanceof Error ? err.message : 'Something went wrong' })
+      const message = err instanceof Error ? err.message : 'Something went wrong'
+      show(message, 'error')
+      setState({ kind: 'error', message })
     }
   }
 
@@ -73,6 +77,7 @@ export default function AddFriendClient() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to send request')
       }
+      show('Friend request sent', 'success')
       setState({ kind: 'sent' })
     } catch (err) {
       setState({ kind: 'error', message: err instanceof Error ? err.message : 'Something went wrong' })

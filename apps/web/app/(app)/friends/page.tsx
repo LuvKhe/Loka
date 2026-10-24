@@ -1,35 +1,23 @@
-// Friends screen
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import FriendRequestActions from './_components/FriendRequestActions'
 
 export default async function FriendsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Fetch friendships with friend profiles
   const { data: friendships } = await supabase
     .from('friendships')
-    .select(`
-      id,
-      user_a,
-      user_b,
-      created_at
-    `)
+    .select('id, user_a, user_b, created_at')
     .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
 
-  // Fetch pending incoming requests
   const { data: incomingRequests } = await supabase
     .from('friend_requests')
-    .select(`
-      id,
-      from_user_id,
-      created_at
-    `)
+    .select('id, from_user_id, created_at')
     .eq('to_user_id', user.id)
     .eq('status', 'pending')
 
-  // Fetch profiles for friend IDs
   const friendIds = (friendships ?? []).map((f) =>
     f.user_a === user.id ? f.user_b : f.user_a,
   )
@@ -51,7 +39,6 @@ export default async function FriendsPage() {
         </Link>
       </div>
 
-      {/* Incoming requests */}
       {(incomingRequests ?? []).length > 0 && (
         <section>
           <p className="loka-section-label">Friend Requests</p>
@@ -66,18 +53,7 @@ export default async function FriendsPage() {
                     </p>
                     <p className="text-xs text-gray-400">{p?.loka_id ?? ''}</p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <form action={`/api/friends/requests/${req.id}/accept`} method="POST">
-                      <button type="submit" className="loka-btn-primary py-1.5 px-3 text-xs">
-                        Accept
-                      </button>
-                    </form>
-                    <form action={`/api/friends/requests/${req.id}/decline`} method="POST">
-                      <button type="submit" className="loka-btn-secondary py-1.5 px-3 text-xs">
-                        Decline
-                      </button>
-                    </form>
-                  </div>
+                  <FriendRequestActions requestId={req.id} />
                 </div>
               )
             })}
@@ -85,7 +61,6 @@ export default async function FriendsPage() {
         </section>
       )}
 
-      {/* Friends list */}
       <section>
         <p className="loka-section-label">
           {friendIds.length > 0 ? `${friendIds.length} Friend${friendIds.length === 1 ? '' : 's'}` : 'Friends'}
@@ -113,7 +88,6 @@ export default async function FriendsPage() {
                       <p className="font-medium text-gray-900 text-sm truncate">
                         {p?.display_name ?? 'Unknown'}
                       </p>
-                      {/* Live status loaded client-side in Phase 7 */}
                       <p className="text-xs text-gray-400">Tap to view profile</p>
                     </div>
                   </div>
