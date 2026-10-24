@@ -43,7 +43,6 @@ export const ROUTES = {
   FRIEND_PROFILE: (id: string) => `/friends/${id}`,
   ONBOARDING: '/onboarding',
   ONBOARDING_RECOVERY: '/onboarding/recovery',
-  TIMETABLE_SCAN: '/timetable/scan',
 } as const
 
 // Status display labels

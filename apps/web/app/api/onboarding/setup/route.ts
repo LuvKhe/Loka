@@ -15,7 +15,10 @@ import {
   RECOVERY_CODE_SEGMENT_LENGTH,
   RECOVERY_CODE_SEGMENTS,
 } from '@loka/shared/constants'
-import { createHash } from 'crypto'
+import { createHash, randomInt } from 'crypto'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { rateLimited } from '@/lib/rate-limit'
+import { TERMS_VERSION } from '@/lib/legal'
 
 // ---------------------------------------------------------------------------
 // Loka ID generation
@@ -24,7 +27,7 @@ function generateLokaId(): string {
   const chars = LOKA_ID_ALPHABET
   function segment(): string {
     return Array.from({ length: LOKA_ID_SEGMENT_LENGTH }, () =>
-      chars[Math.floor(Math.random() * chars.length)],
+      chars[randomInt(chars.length)],
     ).join('')
   }
   return `${segment()}-${segment()}`
@@ -42,7 +45,7 @@ function generateRecoveryCode(): string {
   const segments = Array.from({ length: RECOVERY_CODE_SEGMENTS }, () =>
     Array.from(
       { length: RECOVERY_CODE_SEGMENT_LENGTH },
-      () => RECOVERY_ALPHABET[Math.floor(Math.random() * RECOVERY_ALPHABET.length)],
+      () => RECOVERY_ALPHABET[randomInt(RECOVERY_ALPHABET.length)],
     ).join(''),
   )
   return `${RECOVERY_CODE_PREFIX}-${segments.join('-')}`
@@ -58,7 +61,14 @@ function hashRecoveryCode(code: string): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const displayName: string = body.displayName ?? ''
+    const displayName: string = typeof body.displayName === 'string' ? body.displayName : ''
+
+    if (body.acceptedTerms !== true) {
+      return NextResponse.json(
+        { error: 'You must accept the Terms and Privacy Policy to continue' },
+        { status: 400 },
+      )
+    }
 
     const nameResult = validateDisplayName(displayName.trim())
     if (!nameResult.ok) {
@@ -71,6 +81,9 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    const limited = await rateLimited(user.id, 'onboarding_setup', 5, 3600)
+    if (limited) return limited
 
     // Check if profile already exists (idempotency — don't double-create)
     const { data: existing } = await supabase
@@ -86,9 +99,10 @@ export async function POST(request: Request) {
 
     // Generate Loka ID — retry up to 5 times if collision
     let lokaId: string | null = null
+    const admin = createAdminClient()
     for (let attempt = 0; attempt < 5; attempt++) {
       const candidate = generateLokaId()
-      const { data: collision } = await supabase
+      const { data: collision } = await admin
         .from('profiles')
         .select('id')
         .eq('loka_id', candidate)
@@ -124,6 +138,15 @@ export async function POST(request: Request) {
     if (profileError) {
       console.error('Profile insert error:', JSON.stringify(profileError))
       return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 })
+    }
+
+    const { error: termsError } = await supabase
+      .from('profiles')
+      .update({ terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() })
+      .eq('id', user.id)
+
+    if (termsError) {
+      console.error('Terms acceptance not recorded:', termsError.message)
     }
 
     // Insert privacy settings with defaults (all sharing on)

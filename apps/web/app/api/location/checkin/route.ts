@@ -6,6 +6,7 @@
 // campus_building_id + a human-readable place_label.
 
 import { NextResponse } from 'next/server'
+import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
@@ -16,38 +17,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    const limited = await rateLimited(user.id, 'checkin', 60, 60)
+    if (limited) return limited
+
     const body = await request.json()
-    const campusBuildingId: string | null = body.campusBuildingId ?? null
-    const placeLabel: string = (body.placeLabel ?? '').trim()
+    const campusBuildingId: string = typeof body.campusBuildingId === 'string' ? body.campusBuildingId : ''
 
-    if (!placeLabel) {
-      return NextResponse.json({ error: 'Place label is required' }, { status: 400 })
-    }
-    if (placeLabel.length > 100) {
-      return NextResponse.json({ error: 'Place label too long' }, { status: 400 })
+    if (!campusBuildingId) {
+      return NextResponse.json({ error: 'A campus location is required' }, { status: 400 })
     }
 
-    // If a campusBuildingId is provided, verify it exists and belongs to a real campus building.
-    // We do NOT trust the client's place_label when a building ID is given — we read the name
-    // from the DB and use that instead.
-    let resolvedLabel = placeLabel
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('campus_id')
+      .eq('id', user.id)
+      .single()
 
-    if (campusBuildingId) {
-      const { data: building } = await supabase
-        .from('campus_buildings')
-        .select('id, name, abbreviation')
-        .eq('id', campusBuildingId)
-        .single()
-
-      if (!building) {
-        return NextResponse.json({ error: 'Unknown campus building' }, { status: 400 })
-      }
-
-      // Use the canonical building label from the DB, not the client-supplied label.
-      // Prefer the abbreviation (the timetable code students recognise, e.g. "G.001")
-      // with the full name as a fallback.
-      resolvedLabel = building.abbreviation ?? building.name
+    if (!profile?.campus_id) {
+      return NextResponse.json({ error: 'No campus set for this profile' }, { status: 400 })
     }
+
+    const { data: building } = await supabase
+      .from('campus_buildings')
+      .select('id, name, abbreviation')
+      .eq('id', campusBuildingId)
+      .eq('campus_id', profile.campus_id)
+      .single()
+
+    if (!building) {
+      return NextResponse.json({ error: 'Unknown campus location' }, { status: 400 })
+    }
+
+    const resolvedLabel = building.abbreviation ?? building.name
 
     // Upsert — one row per user, updated in place
     const { error } = await supabase

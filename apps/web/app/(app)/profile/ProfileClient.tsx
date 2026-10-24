@@ -5,6 +5,7 @@ import type { Profile, PrivacySettings } from '@loka/shared/types'
 import QRCodeDisplay from '@/components/ui/QRCodeDisplay'
 import PrivacySettingsPanel from '@/components/profile/PrivacySettingsPanel'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import DeleteAccountPanel from '@/components/profile/DeleteAccountPanel'
 
 interface Props {
   profile: Profile | null
@@ -109,6 +110,19 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
             View Recovery Code
           </a>
         </div>
+      </section>
+
+      <section>
+        <p className="loka-section-label">Legal</p>
+        <div className="loka-card flex gap-4 text-sm">
+          <a href="/terms" className="text-blue-600 dark:text-blue-400 underline">Terms of Use</a>
+          <a href="/privacy" className="text-blue-600 dark:text-blue-400 underline">Privacy Policy</a>
+        </div>
+      </section>
+
+      <section>
+        <p className="loka-section-label">Delete profile</p>
+        <DeleteAccountPanel />
       </section>
     </div>
   )

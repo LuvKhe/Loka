@@ -29,7 +29,13 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users to onboarding
   const { pathname } = request.nextUrl
   const isOnboarding = pathname.startsWith('/onboarding')
-  const isPublic = pathname.startsWith('/_next') || pathname.startsWith('/api')
+  const isPublic =
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname === '/terms' ||
+    pathname === '/privacy' ||
+    pathname === '/manifest.json' ||
+    /\.(png|ico|svg|jpg|jpeg|webp|woff2?)$/.test(pathname)
 
   if (!user && !isOnboarding && !isPublic) {
     const url = request.nextUrl.clone()

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import {
   validateSubjectCode,
@@ -64,6 +65,9 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    const limited = await rateLimited(user.id, 'timetable_write', 20, 60)
+    if (limited) return limited
 
     const body = await request.json()
 

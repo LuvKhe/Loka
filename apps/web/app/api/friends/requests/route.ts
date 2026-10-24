@@ -2,6 +2,7 @@
 // Sends a friend request to another user.
 
 import { NextResponse } from 'next/server'
+import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    const limited = await rateLimited(user.id, 'friend_request', 20, 3600)
+    if (limited) return limited
 
     const body = await request.json()
     const toUserId: string = body.toUserId ?? ''

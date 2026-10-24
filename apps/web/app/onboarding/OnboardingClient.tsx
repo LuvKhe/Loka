@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { validateDisplayName } from '@loka/shared/validation'
@@ -13,6 +14,7 @@ export default function OnboardingClient() {
   const [step, setStep] = useState<Step>('welcome')
   const [displayName, setDisplayName] = useState('')
   const [nameError, setNameError] = useState<string | null>(null)
+  const [accepted, setAccepted] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   function handleNameChange(value: string) {
@@ -22,6 +24,7 @@ export default function OnboardingClient() {
 
   function handleNameSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!accepted) return
     const result = validateDisplayName(displayName.trim())
     if (!result.ok) {
       setNameError(result.error)
@@ -51,7 +54,7 @@ export default function OnboardingClient() {
       const res = await fetch('/api/onboarding/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: name }),
+        body: JSON.stringify({ displayName: name, acceptedTerms: true }),
       })
 
       if (!res.ok) {
@@ -149,9 +152,29 @@ export default function OnboardingClient() {
               )}
             </div>
 
+            <label className="flex items-start gap-3 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                I have read and agree to the{' '}
+                <Link href="/terms" target="_blank" className="text-blue-600 underline">
+                  Terms of Use
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" target="_blank" className="text-blue-600 underline">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={!displayName.trim()}
+              disabled={!displayName.trim() || !accepted}
               className="loka-btn-primary w-full py-3 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue
