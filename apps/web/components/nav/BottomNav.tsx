@@ -73,7 +73,7 @@ export default function BottomNav() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800
                     max-w-lg mx-auto">
       <div className="flex">
         {items.map((item) => {
@@ -88,8 +88,8 @@ export default function BottomNav() {
               className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 px-1
                           text-xs font-medium transition-colors duration-150
                           ${isActive
-                            ? 'text-blue-600'
-                            : 'text-gray-400 hover:text-gray-600'}`}
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
             >
               {isActive ? item.activeIcon : item.icon}
               <span>{item.label}</span>
@@ -98,7 +98,7 @@ export default function BottomNav() {
         })}
       </div>
       {/* iOS safe area */}
-      <div className="h-safe-area-inset-bottom bg-white" />
+      <div className="h-safe-area-inset-bottom bg-white dark:bg-slate-900" />
     </nav>
   )
 }

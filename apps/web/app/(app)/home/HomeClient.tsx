@@ -90,8 +90,8 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
     <div className="p-4 space-y-4">
       {/* Header */}
       <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-900">Floka</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Floka</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
@@ -102,29 +102,29 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
         <div className="loka-card">
           <div className="flex items-start justify-between gap-2 mb-3">
             <div>
-              <p className="font-semibold text-gray-900">{profile.displayName}</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{profile.displayName}</p>
               {state && <StatusBadge status={isManual ? 'free' : state.status} />}
             </div>
             {isManual && (
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
+              <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 shrink-0">
                 Manual
               </span>
             )}
           </div>
 
           {!isManual && state?.currentClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-900">
+            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {state.currentClass.subjectCode}
                 {state.currentClass.subjectName && (
-                  <span className="font-normal text-gray-500"> — {state.currentClass.subjectName}</span>
+                  <span className="font-normal text-gray-500 dark:text-gray-400"> — {state.currentClass.subjectName}</span>
                 )}
               </p>
               {state.currentClass.venue && (
-                <p className="text-xs text-gray-500 mt-0.5">{state.currentClass.venue}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{state.currentClass.venue}</p>
               )}
               {state.timeRemainingSeconds != null && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   Ends {formatTime(state.currentClass.endTime)}
                   {' '}· {formatDuration(state.timeRemainingSeconds)} remaining
                 </p>
@@ -133,31 +133,35 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
           )}
 
           {!isManual && state?.nextClass && !state?.currentClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Next</p>
-              <p className="text-sm font-medium text-gray-900">{state.nextClass.subjectCode}</p>
-              <p className="text-xs text-gray-500">
+            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-1">Next</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{state.nextClass.subjectCode}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {formatTime(state.nextClass.startTime)}
                 {state.nextClass.venue && ` · ${state.nextClass.venue}`}
               </p>
-              {state.timeUntilNextSeconds != null && (
-                <p className="text-xs text-gray-400 mt-0.5">
-                  In {formatDuration(state.timeUntilNextSeconds)}
-                </p>
-              )}
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                {state.timeUntilNextSeconds != null
+                  ? `In ${formatDuration(state.timeUntilNextSeconds)}`
+                  : (() => {
+                      const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                      return DAY_NAMES[state.nextClass!.dayOfWeek] ?? ''
+                    })()
+                }
+              </p>
             </div>
           )}
 
           {!isManual && state && !state.currentClass && !state.nextClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500">
+            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {STATUS_LABELS[state.status] ?? 'No classes scheduled'}
               </p>
             </div>
           )}
 
           {/* Override controls */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
             {isManual ? (
               <button
                 onClick={clearOverride}
@@ -209,22 +213,24 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                 href={`/friends/${friend.id}`}
                 className="loka-card flex items-center gap-3 hover:bg-gray-50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                  <span className="text-blue-600 font-semibold text-sm">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
                     {friend.displayName[0]?.toUpperCase()}
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 text-sm truncate">{friend.displayName}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{friend.displayName}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <StatusBadge status={friend.status} />
                     {friend.currentClass && (
-                      <p className="text-xs text-gray-400 truncate">{friend.currentClass}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{friend.currentClass}</p>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    {friendLocations[friend.id] ?? 'Off campus'}
-                  </p>
+                  {friendLocations[friend.id] && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                      {friendLocations[friend.id]}
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}

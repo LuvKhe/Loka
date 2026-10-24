@@ -34,6 +34,31 @@
   --color-danger-light: #FEE2E2; /* red-100 */
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary:        #3B82F6;
+    --color-primary-light:  #1E3A8A;
+    --color-primary-dark:   #60A5FA;
+
+    --color-status-free:      #22C55E;
+    --color-status-in-class:  #3B82F6;
+    --color-status-between:   #F59E0B;
+    --color-status-offline:   #9CA3AF;
+    --color-status-off-campus:#6B7280;
+
+    --color-bg:         #0F172A;
+    --color-surface:    #1E293B;
+    --color-border:     #334155;
+
+    --color-text-primary:   #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-text-muted:     #64748B;
+
+    --color-danger:       #EF4444;
+    --color-danger-light: #7F1D1D;
+  }
+}
+
 @layer base {
   body {
     background-color: var(--color-bg);
@@ -43,7 +68,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Remove blue tap highlight on mobile */
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -52,13 +76,14 @@
 @layer components {
   /* Card */
   .loka-card {
-    @apply bg-white rounded-xl border border-gray-200 p-4 shadow-sm;
+    @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 shadow-sm;
   }
 
   /* Primary button */
   .loka-btn-primary {
     @apply inline-flex items-center justify-center gap-2
            bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+           dark:bg-blue-500 dark:hover:bg-blue-600 dark:active:bg-blue-700
            text-white font-medium text-sm
            px-4 py-2.5 rounded-lg
            transition-colors duration-150
@@ -69,8 +94,9 @@
   .loka-btn-secondary {
     @apply inline-flex items-center justify-center gap-2
            bg-white hover:bg-gray-50 active:bg-gray-100
-           text-gray-700 font-medium text-sm
-           border border-gray-300
+           dark:bg-slate-800 dark:hover:bg-slate-700 dark:active:bg-slate-600
+           text-gray-700 dark:text-gray-200 font-medium text-sm
+           border border-gray-300 dark:border-slate-600
            px-4 py-2.5 rounded-lg
            transition-colors duration-150
            disabled:opacity-50 disabled:cursor-not-allowed;
@@ -88,21 +114,22 @@
 
   /* Text input */
   .loka-input {
-    @apply w-full rounded-lg border border-gray-300
-           bg-white px-3 py-2.5 text-sm text-gray-900
-           placeholder:text-gray-400
+    @apply w-full rounded-lg border border-gray-300 dark:border-slate-600
+           bg-white dark:bg-slate-800 px-3 py-2.5 text-sm
+           text-gray-900 dark:text-gray-100
+           placeholder:text-gray-400 dark:placeholder:text-gray-500
            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-           disabled:opacity-50 disabled:bg-gray-50;
+           disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-slate-900;
   }
 
   /* Status badge */
-  .loka-badge-free       { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700; }
-  .loka-badge-in-class   { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700; }
-  .loka-badge-between    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700; }
-  .loka-badge-offline    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500; }
+  .loka-badge-free       { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400; }
+  .loka-badge-in-class   { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400; }
+  .loka-badge-between    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400; }
+  .loka-badge-offline    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400; }
 
   /* Section label */
   .loka-section-label {
-    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2;
+    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2;
   }
 }
