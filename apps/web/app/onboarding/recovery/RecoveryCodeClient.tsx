@@ -75,6 +75,14 @@ export default function RecoveryCodeClient() {
           </p>
         </div>
 
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 space-y-2">
+          <p className="text-sm font-medium text-gray-900">Before you continue</p>
+          <ul className="list-disc pl-5 space-y-1 text-xs text-gray-600">
+            <li>Save this code in Notes or a password manager. A screenshot is not enough if you delete it.</li>
+            <li>Add Loka to your home screen and always open it from there. This keeps you signed in.</li>
+          </ul>
+        </div>
+
         <div className="space-y-3">
           <button
             onClick={handleCopy}

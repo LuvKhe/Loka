@@ -5,6 +5,7 @@ import type { Profile, PrivacySettings } from '@loka/shared/types'
 import QRCodeDisplay from '@/components/ui/QRCodeDisplay'
 import PrivacySettingsPanel from '@/components/profile/PrivacySettingsPanel'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import KeepSafeCard from '@/components/profile/KeepSafeCard'
 import DeleteAccountPanel from '@/components/profile/DeleteAccountPanel'
 
 interface Props {
@@ -85,6 +86,11 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
           </div>
         )}
       </div>
+
+      <section>
+        <p className="loka-section-label">Keep your profile safe</p>
+        <KeepSafeCard />
+      </section>
 
       <section>
         <p className="loka-section-label">Appearance</p>

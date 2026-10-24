@@ -8,6 +8,7 @@ import { STATUS_LABELS } from '@loka/shared/constants'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import CheckInPanel from '@/components/location/CheckInPanel'
+import InstallBanner from '@/components/ui/InstallBanner'
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -97,6 +98,8 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
           {now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
+
+      <InstallBanner />
 
       {/* Your status card */}
       <section>
