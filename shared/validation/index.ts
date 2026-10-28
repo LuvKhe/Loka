@@ -34,6 +34,13 @@ export function validateDisplayName(name: string): ValidationResult {
   return { ok: true }
 }
 
+export function validateBio(bio: unknown): ValidationResult {
+  if (bio === null || bio === undefined || bio === '') return { ok: true }
+  if (typeof bio !== 'string') return { ok: false, error: 'Bio must be text' }
+  if (bio.trim().length > 160) return { ok: false, error: 'Bio must be 160 characters or fewer' }
+  return { ok: true }
+}
+
 export function validateSubjectCode(code: string): ValidationResult {
   if (!code || typeof code !== 'string') {
     return { ok: false, error: 'Subject code is required' }

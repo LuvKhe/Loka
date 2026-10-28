@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { validateDisplayName } from '@loka/shared/validation'
+import { validateDisplayName, validateBio } from '@loka/shared/validation'
 
 export async function PATCH(request: Request) {
   try {
@@ -26,6 +26,13 @@ export async function PATCH(request: Request) {
       const result = validateDisplayName(body.displayName)
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
       update.display_name = body.displayName
+    }
+
+    if ('bio' in body) {
+      const result = validateBio(body.bio)
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+      const clean = typeof body.bio === 'string' ? body.bio.trim() : ''
+      update.bio = clean === '' ? null : clean
     }
 
     if ('statusOverride' in body) {

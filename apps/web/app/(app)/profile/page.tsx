@@ -8,6 +8,7 @@ function mapProfile(row: Record<string, unknown>): Profile {
     id: row.id as string,
     displayName: row.display_name as string,
     avatarUrl: (row.avatar_url as string | null) ?? null,
+    bio: (row.bio as string | null) ?? null,
     university: (row.university as string) ?? '',
     campusId: (row.campus_id as string) ?? '',
     lokaId: row.loka_id as string,
@@ -35,7 +36,7 @@ export default async function ProfilePage() {
   if (!user) return null
 
   const [profileRes, privacyRes] = await Promise.all([
-    supabase.from('profiles').select('id, display_name, avatar_url, university, campus_id, loka_id, status_override, status_override_set_at, created_at, updated_at').eq('id', user.id).single(),
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('privacy_settings').select('*').eq('user_id', user.id).single(),
   ])
 

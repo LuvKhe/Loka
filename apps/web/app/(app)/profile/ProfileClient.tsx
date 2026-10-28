@@ -49,6 +49,7 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
           <div>
             <p className="font-bold text-gray-900">{profile.displayName}</p>
             <p className="text-sm text-gray-500">{profile.university}</p>
+            {profile.bio && <p className="text-sm text-gray-600 mt-1">{profile.bio}</p>}
           </div>
         </div>
 

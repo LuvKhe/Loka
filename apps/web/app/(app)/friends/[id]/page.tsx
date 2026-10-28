@@ -1,13 +1,26 @@
-// Friend profile screen — shows a friend's public info and status
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { computeTimetableState } from '@loka/shared/timetable'
+import { computeTimetableState, formatTime } from '@loka/shared/timetable'
 import type { TimetableEntry } from '@loka/shared/types'
 
 interface Props {
   params: { id: string }
+}
+
+const DAY_NAMES: Record<number, string> = {
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+  7: 'Sunday',
+}
+
+function describe(entry: TimetableEntry): string {
+  return entry.subjectName ? `${entry.subjectCode} - ${entry.subjectName}` : entry.subjectCode
 }
 
 export default async function FriendProfilePage({ params }: Props) {
@@ -22,15 +35,15 @@ export default async function FriendProfilePage({ params }: Props) {
     .select('id')
     .eq('user_a', userA)
     .eq('user_b', userB)
-    .single()
+    .maybeSingle()
 
   if (!friendship) notFound()
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, display_name, loka_id, university, status_override')
+    .select('*')
     .eq('id', friendId)
-    .single()
+    .maybeSingle()
 
   if (!profile) notFound()
 
@@ -38,10 +51,14 @@ export default async function FriendProfilePage({ params }: Props) {
     .from('privacy_settings')
     .select('share_location, share_current_class, share_next_class')
     .eq('user_id', friendId)
-    .single()
+    .maybeSingle()
+
+  const shareLocation = privacy?.share_location === true
+  const shareClass = privacy?.share_current_class === true
+  const shareNext = privacy?.share_next_class === true
 
   let friendLocation: string | null = null
-  if (privacy?.share_location) {
+  if (shareLocation) {
     const { data: locationRow } = await supabase
       .from('active_locations')
       .select('place_label')
@@ -50,18 +67,15 @@ export default async function FriendProfilePage({ params }: Props) {
     friendLocation = locationRow?.place_label ?? null
   }
 
-  let timetableStatus: string = 'unknown'
-  let currentClass: string | null = null
-  let nextClass: string | null = null
-
-  if (privacy?.share_current_class || privacy?.share_next_class) {
-    const { data: entries } = await supabase
+  let entries: TimetableEntry[] = []
+  if (shareClass || shareNext) {
+    const { data: rows } = await supabase
       .from('timetable_entries')
       .select('*')
       .eq('user_id', friendId)
       .eq('is_active', true)
 
-    const mapped: TimetableEntry[] = (entries ?? []).map((e) => ({
+    entries = (rows ?? []).map((e) => ({
       id: e.id,
       userId: e.user_id,
       dayOfWeek: e.day_of_week,
@@ -78,24 +92,35 @@ export default async function FriendProfilePage({ params }: Props) {
       createdAt: e.created_at,
       updatedAt: e.updated_at,
     }))
+  }
 
-    const state = computeTimetableState(mapped, new Date(), profile.status_override)
-    timetableStatus = state.status
+  const state = computeTimetableState(entries, new Date(), profile.status_override ?? null)
+  const status = shareClass || shareNext ? state.status : 'unknown'
+  const nowClass = shareClass && state.currentClass ? describe(state.currentClass) : null
+  const nextClass = shareNext && state.nextClass ? describe(state.nextClass) : null
 
-    if (privacy.share_current_class && state.currentClass) {
-      currentClass = `${state.currentClass.subjectCode}${state.currentClass.subjectName ? ` — ${state.currentClass.subjectName}` : ''}`
+  const byDay: Record<number, TimetableEntry[]> = {}
+  if (shareClass) {
+    for (const e of entries) {
+      if (!byDay[e.dayOfWeek]) byDay[e.dayOfWeek] = []
+      byDay[e.dayOfWeek]!.push(e)
     }
-    if (privacy.share_next_class && state.nextClass) {
-      nextClass = `${state.nextClass.subjectCode}${state.nextClass.subjectName ? ` — ${state.nextClass.subjectName}` : ''}`
+    for (const list of Object.values(byDay)) {
+      list.sort((a, b) => a.startTime.localeCompare(b.startTime))
     }
   }
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b)
+  const bio: string | null = profile.bio ?? null
 
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 pt-2">
-        <Link href="/friends" className="text-sm text-gray-400 p-1 -ml-1">Back</Link>
-        <h1 className="text-xl font-bold text-gray-900">Friend</h1>
+        <Link href="/friends" className="text-sm text-gray-400 p-1 -ml-1">
+          Back
+        </Link>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Friend</h1>
       </div>
+
       <div className="loka-card">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -103,40 +128,95 @@ export default async function FriendProfilePage({ params }: Props) {
               {(profile.display_name ?? '?')[0]?.toUpperCase()}
             </span>
           </div>
-          <div>
-            <p className="font-bold text-gray-900">{profile.display_name}</p>
-            {profile.university && <p className="text-sm text-gray-500">{profile.university}</p>}
+          <div className="min-w-0">
+            <p className="font-bold text-gray-900 dark:text-slate-100 break-words">{profile.display_name}</p>
+            {profile.university && (
+              <p className="text-sm text-gray-500 dark:text-slate-400">{profile.university}</p>
+            )}
           </div>
         </div>
+
+        {bio && <p className="text-sm text-gray-700 dark:text-slate-300 mb-4 break-words">{bio}</p>}
+
         <div className="flex items-center gap-2">
-          <StatusBadge status={timetableStatus} />
+          <StatusBadge status={status} />
         </div>
-        {friendLocation && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400 mb-0.5">On campus</p>
-            <p className="text-sm text-gray-700">{friendLocation}</p>
+
+        {(shareLocation || friendLocation) && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+            <p className="text-xs text-gray-400 mb-0.5">Location</p>
+            <p className="text-sm text-gray-700 dark:text-slate-300">
+              {friendLocation ?? 'Not checked in'}
+            </p>
           </div>
         )}
       </div>
-      {(currentClass || nextClass) && (
+
+      {(nowClass || nextClass) && (
         <section>
-          <p className="loka-section-label">Schedule</p>
+          <p className="loka-section-label">Right now</p>
           <div className="loka-card space-y-3">
-            {currentClass && (
+            {nowClass && (
               <div>
                 <p className="text-xs text-gray-400">Now</p>
-                <p className="text-sm font-medium text-gray-900">{currentClass}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nowClass}</p>
+                {state.currentClass?.venue && (
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{state.currentClass.venue}</p>
+                )}
               </div>
             )}
             {nextClass && (
               <div>
                 <p className="text-xs text-gray-400">Next</p>
-                <p className="text-sm font-medium text-gray-900">{nextClass}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nextClass}</p>
+                {state.nextClass && (
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    {DAY_NAMES[state.nextClass.dayOfWeek]} {formatTime(state.nextClass.startTime)}
+                    {state.nextClass.venue ? ` - ${state.nextClass.venue}` : ''}
+                  </p>
+                )}
               </div>
             )}
           </div>
         </section>
       )}
+
+      <section>
+        <p className="loka-section-label">Timetable</p>
+        {!shareClass ? (
+          <div className="loka-card">
+            <p className="text-sm text-gray-400">This friend keeps their timetable private.</p>
+          </div>
+        ) : days.length === 0 ? (
+          <div className="loka-card">
+            <p className="text-sm text-gray-400">No timetable added yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {days.map((d) => (
+              <div key={d} className="loka-card">
+                <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">{DAY_NAMES[d]}</p>
+                <div className="space-y-2">
+                  {byDay[d]!.map((e) => (
+                    <div key={e.id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
+                          {e.subjectCode}
+                          {e.groupName ? <span className="text-gray-400 font-normal"> Group {e.groupName}</span> : null}
+                        </p>
+                        {e.venue && <p className="text-xs text-gray-500 dark:text-slate-400">{e.venue}</p>}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 shrink-0">
+                        {formatTime(e.startTime)} - {formatTime(e.endTime)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

@@ -35,6 +35,7 @@ export interface Profile {
   id: string // = auth.uid()
   displayName: string
   avatarUrl: string | null
+  bio?: string | null
   university: string
   campusId: string
   lokaId: string // public friend code e.g. "K7M2-P9RQ"
