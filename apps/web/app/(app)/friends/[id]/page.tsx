@@ -4,6 +4,7 @@ import Link from 'next/link'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Avatar from '@/components/ui/Avatar'
 import { computeTimetableState, formatTime } from '@loka/shared/timetable'
+import TimetableView from '@/components/timetable/TimetableView'
 import type { TimetableEntry } from '@loka/shared/types'
 
 interface Props {
@@ -97,123 +98,70 @@ export default async function FriendProfilePage({ params }: Props) {
 
   const state = computeTimetableState(entries, new Date(), profile.status_override ?? null)
   const status = shareClass || shareNext ? state.status : 'unknown'
-  const nowClass = shareClass && state.currentClass ? describe(state.currentClass) : null
   const nextClass = shareNext && state.nextClass ? describe(state.nextClass) : null
 
-  const byDay: Record<number, TimetableEntry[]> = {}
-  if (shareClass) {
-    for (const e of entries) {
-      if (!byDay[e.dayOfWeek]) byDay[e.dayOfWeek] = []
-      byDay[e.dayOfWeek]!.push(e)
-    }
-    for (const list of Object.values(byDay)) {
-      list.sort((a, b) => a.startTime.localeCompare(b.startTime))
-    }
-  }
-  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b)
   const bio: string | null = profile.bio ?? null
 
+  const suppressNow = profile.status_override === 'free'
+  const showSmallNext = !shareClass && nextClass
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5">
       <div className="flex items-center gap-3 pt-2">
-        <Link href="/friends" className="text-sm text-gray-500 p-1 -ml-1">
+        <Link href="/friends" className="text-sm font-medium text-gray-700 dark:text-gray-200 min-h-[2.75rem] inline-flex items-center px-1 -ml-1">
           Back
         </Link>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Friend</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-slate-100">Friend</h1>
       </div>
 
-      <div className="loka-card">
-        <div className="flex items-center gap-4 mb-4">
-          <Avatar url={profile.avatar_url ?? null} name={profile.display_name} size={56} />
-          <div className="min-w-0">
-            <p className="font-bold text-gray-900 dark:text-slate-100 break-words">{profile.display_name}</p>
-            {profile.university && (
-              <p className="text-sm text-gray-500 dark:text-slate-400">{profile.university}</p>
+      <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+        <div className="h-16 bg-gradient-to-r from-blue-700 to-violet-800" aria-hidden="true" />
+        <div className="px-4 pb-4 -mt-9">
+          <div className="inline-block rounded-full p-1 bg-white dark:bg-slate-800">
+            <Avatar url={profile.avatar_url ?? null} name={profile.display_name} size={64} />
+          </div>
+          <p className="text-xl font-extrabold text-gray-900 dark:text-slate-100 break-words mt-2" style={{ textWrap: 'balance' }}>
+            {profile.display_name}
+          </p>
+          {profile.university && <p className="text-sm text-gray-600 dark:text-slate-400">{profile.university}</p>}
+          {bio && <p className="text-sm text-gray-800 dark:text-slate-200 mt-3 break-words">{bio}</p>}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <StatusBadge status={status} />
+            {(shareLocation || friendLocation) && (
+              <span className="text-xs rounded-full px-2.5 py-1 bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200">
+                {friendLocation ? `At ${friendLocation}` : 'Not checked in'}
+              </span>
             )}
           </div>
         </div>
-
-        {bio && <p className="text-sm text-gray-700 dark:text-slate-300 mb-4 break-words">{bio}</p>}
-
-        <div className="flex items-center gap-2">
-          <StatusBadge status={status} />
-        </div>
-
-        {(shareLocation || friendLocation) && (
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-            <p className="text-xs text-gray-500 mb-0.5">Location</p>
-            <p className="text-sm text-gray-700 dark:text-slate-300">
-              {friendLocation ?? 'Not checked in'}
-            </p>
-          </div>
-        )}
       </div>
 
-      {(nowClass || nextClass) && (
+      {showSmallNext && (
         <section>
-          <p className="loka-section-label">Right now</p>
-          <div className="loka-card space-y-3">
-            {nowClass && (
-              <div>
-                <p className="text-xs text-gray-500">Now</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nowClass}</p>
-                {state.currentClass?.venue && (
-                  <p className="text-xs text-gray-500 dark:text-slate-400">{state.currentClass.venue}</p>
-                )}
-              </div>
-            )}
-            {nextClass && (
-              <div>
-                <p className="text-xs text-gray-500">Next</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nextClass}</p>
-                {state.nextClass && (
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    {DAY_NAMES[state.nextClass.dayOfWeek]} {formatTime(state.nextClass.startTime)}
-                    {state.nextClass.venue ? ` - ${state.nextClass.venue}` : ''}
-                  </p>
-                )}
-              </div>
+          <p className="loka-section-label">Up next</p>
+          <div className="loka-card">
+            <p className="font-bold text-gray-900 dark:text-slate-100">{nextClass}</p>
+            {state.nextClass && (
+              <p className="text-sm text-gray-600 dark:text-slate-400 tabular-nums">
+                {DAY_NAMES[state.nextClass.dayOfWeek]} {formatTime(state.nextClass.startTime)}
+                {state.nextClass.venue ? ` - ${state.nextClass.venue}` : ''}
+              </p>
             )}
           </div>
         </section>
       )}
 
-      <section>
-        <p className="loka-section-label">Timetable</p>
-        {!shareClass ? (
-          <div className="loka-card">
-            <p className="text-sm text-gray-500">This friend keeps their timetable private.</p>
-          </div>
-        ) : days.length === 0 ? (
-          <div className="loka-card">
-            <p className="text-sm text-gray-500">No timetable added yet.</p>
-          </div>
-        ) : (
-          <div className="loka-list">
-            {days.map((d) => (
-              <div key={d} className="loka-card">
-                <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">{DAY_NAMES[d]}</p>
-                <div className="space-y-2">
-                  {byDay[d]!.map((e) => (
-                    <div key={e.id} className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                          {e.subjectCode}
-                          {e.groupName ? <span className="text-gray-500 font-normal"> Group {e.groupName}</span> : null}
-                        </p>
-                        {e.venue && <p className="text-xs text-gray-500 dark:text-slate-400">{e.venue}</p>}
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 shrink-0">
-                        {formatTime(e.startTime)} - {formatTime(e.endTime)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {!shareClass ? (
+        <div className="loka-card">
+          <p className="text-sm text-gray-600 dark:text-slate-400">This friend keeps their timetable private.</p>
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="loka-card">
+          <p className="text-sm text-gray-600 dark:text-slate-400">No timetable added yet.</p>
+        </div>
+      ) : (
+        <TimetableView entries={entries} readOnly suppressNow={suppressNow} />
+      )}
     </div>
   )
 }

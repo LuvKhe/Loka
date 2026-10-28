@@ -26,7 +26,15 @@ function nowParts(d: Date) {
   return { dow: js === 0 ? 7 : js, min: d.getHours() * 60 + d.getMinutes() }
 }
 
-export default function TimetableView({ entries }: { entries: TimetableEntry[] }) {
+export default function TimetableView({
+  entries,
+  readOnly = false,
+  suppressNow = false,
+}: {
+  entries: TimetableEntry[]
+  readOnly?: boolean
+  suppressNow?: boolean
+}) {
   const [now, setNow] = useState<{ dow: number; min: number } | null>(null)
   const [picked, setPicked] = useState<number | null>(null)
 
@@ -50,8 +58,14 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
   const hero = useMemo(() => {
     if (!now) return null
     const today = byDay[now.dow] ?? []
-    const current = today.find((e) => toMin(e.startTime) <= now.min && now.min < toMin(e.endTime))
-    if (current) return { kind: 'now' as const, entry: current, mins: toMin(current.endTime) - now.min }
+    const current = suppressNow
+      ? undefined
+      : today.find((e) => toMin(e.startTime) <= now.min && now.min < toMin(e.endTime))
+    if (current) {
+      const s0 = toMin(current.startTime)
+      const e0 = toMin(current.endTime)
+      return { kind: 'now' as const, entry: current, mins: e0 - now.min, pct: Math.round(((now.min - s0) / (e0 - s0)) * 100) }
+    }
     const next = today.find((e) => toMin(e.startTime) > now.min)
     if (next) return { kind: 'next' as const, entry: next, mins: toMin(next.startTime) - now.min }
     for (let i = 1; i <= 7; i++) {
@@ -60,7 +74,7 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
       if (list?.length) return { kind: 'later' as const, entry: list[0]!, day: d }
     }
     return null
-  }, [now, byDay])
+  }, [now, byDay, suppressNow])
 
   const range = useMemo(() => {
     let lo = 8 * 60
@@ -79,7 +93,7 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
       {now === null ? (
         <div className="h-36 rounded-2xl bg-gray-200 dark:bg-slate-800 animate-pulse" aria-hidden="true" />
       ) : hero ? (
-        <HeroCard hero={hero} />
+        <HeroCard hero={hero} readOnly={readOnly} />
       ) : null}
 
       <div role="group" aria-label="Choose a day" className="grid grid-cols-7 gap-1.5">
@@ -154,8 +168,8 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
                       <p className="text-sm font-bold text-gray-900 dark:text-gray-100 tabular-nums">{e.startTime.slice(0, 5)}</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400 tabular-nums">{e.endTime.slice(0, 5)}</p>
                     </div>
-                    <Link
-                      href={`/timetable/${e.id}/edit`}
+                    <Wrap
+                      href={readOnly ? null : `/timetable/${e.id}/edit`}
                       className={[
                         'relative flex-1 min-w-0 rounded-2xl overflow-hidden pl-5 pr-4 py-3 border transition-transform duration-150 active:scale-[0.98]',
                         c.tint,
@@ -189,7 +203,7 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
                           </span>
                         )}
                       </div>
-                    </Link>
+                    </Wrap>
                   </div>
                 </li>
               )
@@ -240,22 +254,34 @@ export default function TimetableView({ entries }: { entries: TimetableEntry[] }
   )
 }
 
+function Wrap({ href, className, children }: { href: string | null; className: string; children: React.ReactNode }) {
+  if (href === null) return <div className={className}>{children}</div>
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  )
+}
+
 function HeroCard({
   hero,
+  readOnly,
 }: {
   hero:
-    | { kind: 'now' | 'next'; entry: TimetableEntry; mins: number }
+    | { kind: 'now'; entry: TimetableEntry; mins: number; pct: number }
+    | { kind: 'next'; entry: TimetableEntry; mins: number }
     | { kind: 'later'; entry: TimetableEntry; day: number }
+  readOnly: boolean
 }) {
   const c = subjectColor(hero.entry.subjectCode)
-  const label = hero.kind === 'now' ? 'Happening now' : hero.kind === 'next' ? 'Up next' : 'Next class'
+  const label = hero.kind === 'now' ? (readOnly ? 'In class now' : 'Happening now') : hero.kind === 'next' ? 'Up next' : 'Next class'
   let sub: string
   if (hero.kind === 'later') sub = `${DAY_FULL[hero.day]} at ${hero.entry.startTime.slice(0, 5)}`
   else if (hero.kind === 'now') sub = `Ends in ${span(hero.mins)}`
   else sub = `Starts in ${span(hero.mins)}`
   return (
-    <Link
-      href={`/timetable/${hero.entry.id}/edit`}
+    <Wrap
+      href={readOnly ? null : `/timetable/${hero.entry.id}/edit`}
       className={['block rounded-2xl bg-gradient-to-br text-white p-5 shadow-lg transition-transform duration-150 active:scale-[0.98]', c.hero].join(' ')}
     >
       <p className="text-xs font-semibold uppercase tracking-wider text-white">{label}</p>
@@ -268,6 +294,21 @@ function HeroCard({
         {hero.entry.venue && <span className="text-xs rounded-full px-2.5 py-1 bg-black/25">{hero.entry.venue}</span>}
         {hero.entry.groupName && <span className="text-xs rounded-full px-2.5 py-1 bg-black/25">Group {hero.entry.groupName}</span>}
       </div>
-    </Link>
+      {hero.kind === 'now' && (
+        <div className="mt-4">
+          <div
+            role="progressbar"
+            aria-label="Class progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={hero.pct}
+            className="h-2 rounded-full bg-black/30 overflow-hidden"
+          >
+            <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${hero.pct}%` }} />
+          </div>
+          <p className="text-xs mt-1.5 tabular-nums">{hero.pct}% done</p>
+        </div>
+      )}
+    </Wrap>
   )
 }
