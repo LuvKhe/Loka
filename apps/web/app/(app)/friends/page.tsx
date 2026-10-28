@@ -43,7 +43,7 @@ export default async function FriendsPage() {
       {(incomingRequests ?? []).length > 0 && (
         <section>
           <p className="loka-section-label">Friend Requests</p>
-          <div className="space-y-2">
+          <div className="loka-list">
             {incomingRequests!.map((req) => {
               const p = profileMap[req.from_user_id]
               return (
@@ -54,7 +54,7 @@ export default async function FriendsPage() {
                       <p className="font-medium text-gray-900 text-sm truncate">
                         {p?.display_name ?? 'Unknown'}
                       </p>
-                      <p className="text-xs text-gray-400">{p?.loka_id ?? ''}</p>
+                      <p className="text-xs text-gray-500">{p?.loka_id ?? ''}</p>
                     </div>
                   </div>
                   <FriendRequestActions requestId={req.id} />
@@ -72,12 +72,12 @@ export default async function FriendsPage() {
 
         {friendIds.length === 0 ? (
           <div className="loka-card">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               No friends yet. Add a friend using their Loka ID or QR code.
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="loka-list">
             {friendIds.map((fid) => {
               const p = profileMap[fid]
               return (
@@ -88,7 +88,7 @@ export default async function FriendsPage() {
                       <p className="font-medium text-gray-900 text-sm truncate">
                         {p?.display_name ?? 'Unknown'}
                       </p>
-                      <p className="text-xs text-gray-400">Tap to view profile</p>
+                      <p className="text-xs text-gray-500">Tap to view profile</p>
                     </div>
                   </div>
                 </Link>

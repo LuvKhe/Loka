@@ -44,7 +44,7 @@ export default async function EditTimetableEntryPage({ params }: Props) {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 pt-2">
-        <Link href="/timetable" className="text-sm text-gray-400 p-1 -ml-1">
+        <Link href="/timetable" className="text-sm text-gray-500 p-1 -ml-1">
           Back
         </Link>
         <h1 className="text-xl font-bold text-gray-900">Edit Class</h1>

@@ -28,8 +28,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <ToastProvider>
     <FriendNotifier />
-    <div className="relative max-w-lg mx-auto bg-gray-50 dark:bg-slate-900" style={{ minHeight: '100dvh' }}>
-      <main className="min-h-screen" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <a href="#main" className="loka-skip">Skip to main content</a>
+    <div className="loka-shell relative bg-gray-50 dark:bg-slate-900" style={{ minHeight: '100dvh' }}>
+      <main id="main" className="loka-main min-h-screen" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
       <BottomNav />

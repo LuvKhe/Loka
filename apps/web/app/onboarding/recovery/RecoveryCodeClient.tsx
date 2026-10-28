@@ -69,7 +69,7 @@ export default function RecoveryCodeClient() {
         </div>
 
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Recovery Code</p>
+          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Recovery Code</p>
           <p className="font-mono font-bold text-gray-900 text-lg tracking-widest break-all">
             {code}
           </p>

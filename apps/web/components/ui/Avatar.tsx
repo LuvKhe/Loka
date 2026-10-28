@@ -11,7 +11,7 @@ export default function Avatar({ url, name, size = 40 }: Props) {
     return (
       <img
         src={url}
-        alt=""
+        alt={name ? `Profile photo of ${name}` : 'Profile photo'}
         width={size}
         height={size}
         className="rounded-full object-cover shrink-0"
@@ -22,6 +22,7 @@ export default function Avatar({ url, name, size = 40 }: Props) {
 
   return (
     <div
+      aria-hidden="true"
       className="rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0"
       style={dimension}
     >

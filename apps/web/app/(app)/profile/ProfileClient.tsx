@@ -52,7 +52,7 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
 
         {/* Loka ID */}
         <div className="bg-gray-50 rounded-lg p-3 mb-3">
-          <p className="text-xs text-gray-400 mb-1">Loka ID</p>
+          <p className="text-xs text-gray-500 mb-1">Loka ID</p>
           <div className="flex items-center justify-between gap-2">
             <p className="font-mono font-bold text-gray-900 text-xl">
               {profile.lokaId || '—'}

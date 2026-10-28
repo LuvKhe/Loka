@@ -15,11 +15,11 @@ export default function LegalLayout({ title, children }: { title: string; childr
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <div className="mx-auto max-w-lg px-5 py-8 space-y-6">
         <div>
-          <Link href="/onboarding" className="text-sm text-gray-400 dark:text-slate-500">
+          <Link href="/onboarding" className="text-sm text-gray-500 dark:text-slate-400">
             Back
           </Link>
           <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-100">{title}</h1>
-          <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">Version {TERMS_VERSION}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Version {TERMS_VERSION}</p>
         </div>
         {children}
         {SUPPORT_EMAIL && (
@@ -33,7 +33,7 @@ export default function LegalLayout({ title, children }: { title: string; childr
             </p>
           </LegalSection>
         )}
-        <div className="flex gap-4 border-t border-gray-100 dark:border-slate-800 pt-4 text-xs text-gray-400 dark:text-slate-500">
+        <div className="flex gap-4 border-t border-gray-100 dark:border-slate-800 pt-4 text-xs text-gray-500 dark:text-slate-400">
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
         </div>

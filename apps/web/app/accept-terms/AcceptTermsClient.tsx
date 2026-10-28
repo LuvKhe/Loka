@@ -61,7 +61,7 @@ export default function AcceptTermsClient() {
           </span>
         </label>
 
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
 
         <button
           onClick={accept}

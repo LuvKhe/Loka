@@ -32,7 +32,15 @@ export default function QRCodeDisplay({ value, size = 200 }: Props) {
 
   return (
     <div className="bg-white p-3 rounded-xl border border-gray-100 inline-block">
-      <canvas ref={canvasRef} width={size} height={size} />
+      <canvas
+        ref={canvasRef}
+        width={size}
+        height={size}
+        role="img"
+        aria-label={`QR code for Loka ID ${value}`}
+      >
+        {`QR code for Loka ID ${value}`}
+      </canvas>
     </div>
   )
 }

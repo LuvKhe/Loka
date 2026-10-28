@@ -21,7 +21,7 @@ export function useToast() {
 }
 
 const KIND_CLASSES: Record<Kind, string> = {
-  success: 'bg-emerald-600 text-white',
+  success: 'bg-emerald-700 text-white',
   info: 'bg-blue-600 text-white',
   error: 'bg-red-600 text-white',
 }
@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            role="status"
+            role={t.kind === 'error' ? 'alert' : 'status'}
             className={`pointer-events-auto w-full max-w-sm rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${KIND_CLASSES[t.kind]}`}
           >
             {t.message}

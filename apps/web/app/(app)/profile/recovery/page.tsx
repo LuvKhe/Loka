@@ -8,7 +8,7 @@ export default function ProfileRecoveryPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 pt-2">
-        <Link href="/profile" className="text-sm text-gray-400 p-1 -ml-1">
+        <Link href="/profile" className="text-sm text-gray-500 p-1 -ml-1">
           Back
         </Link>
         <h1 className="text-xl font-bold text-gray-900">Recovery Code</h1>
@@ -24,7 +24,7 @@ export default function ProfileRecoveryPage() {
           If you have lost your code, you will need to create a new profile if you lose access to
           this device.
         </p>
-        <p className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+        <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
           Recovery code verification is coming in a future update.
         </p>
       </div>

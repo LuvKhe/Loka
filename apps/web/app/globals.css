@@ -17,7 +17,7 @@
   --color-status-in-class:  #2563EB; /* blue-600 */
   --color-status-between:   #D97706; /* amber-600 */
   --color-status-offline:   #6B7280; /* gray-500 */
-  --color-status-off-campus:#9CA3AF; /* gray-400 */
+  --color-status-off-campus:#6B7280; /* gray-500 */
 
   /* Surface */
   --color-bg:         #F9FAFB; /* gray-50 */
@@ -27,7 +27,7 @@
   /* Text */
   --color-text-primary:   #111827; /* gray-900 */
   --color-text-secondary: #6B7280; /* gray-500 */
-  --color-text-muted:     #9CA3AF; /* gray-400 */
+  --color-text-muted:     #6B7280; /* gray-500 */
 
   /* Danger */
   --color-danger:       #DC2626; /* red-600 */
@@ -43,7 +43,7 @@
     --color-status-in-class:  #3B82F6;
     --color-status-between:   #F59E0B;
     --color-status-offline:   #9CA3AF;
-    --color-status-off-campus:#6B7280;
+    --color-status-off-campus:#94A3B8;
 
     --color-bg:         #0F172A;
     --color-surface:    #1E293B;
@@ -51,7 +51,7 @@
 
     --color-text-primary:   #F1F5F9;
     --color-text-secondary: #94A3B8;
-    --color-text-muted:     #64748B;
+    --color-text-muted:     #94A3B8;
 
     --color-danger:       #EF4444;
     --color-danger-light: #7F1D1D;
@@ -64,7 +64,7 @@
 .dark .text-gray-900 { color: #F1F5F9; }
 .dark .text-gray-700, .dark .text-gray-600 { color: #CBD5E1; }
 .dark .text-gray-500 { color: #94A3B8; }
-.dark .text-gray-400 { color: #64748B; }
+.dark .text-gray-400 { color: #94A3B8; }
 
 @layer base {
   body {
@@ -90,7 +90,7 @@
   .loka-btn-primary {
     @apply inline-flex items-center justify-center gap-2
            bg-blue-600 hover:bg-blue-700 active:bg-blue-800
-           dark:bg-blue-500 dark:hover:bg-blue-600 dark:active:bg-blue-700
+           dark:bg-blue-600 dark:hover:bg-blue-700 dark:active:bg-blue-800
            text-white font-medium text-sm
            px-4 py-2.5 rounded-lg
            transition-colors duration-150
@@ -124,19 +124,104 @@
     @apply w-full rounded-lg border border-gray-300 dark:border-slate-600
            bg-white dark:bg-slate-800 px-3 py-2.5 text-sm
            text-gray-900 dark:text-gray-100
-           placeholder:text-gray-400 dark:placeholder:text-gray-500
+           placeholder:text-gray-500 dark:placeholder:text-slate-400
            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
            disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-slate-900;
   }
 
   /* Status badge */
-  .loka-badge-free       { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400; }
+  .loka-badge-free       { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400; }
   .loka-badge-in-class   { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400; }
-  .loka-badge-between    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400; }
-  .loka-badge-offline    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400; }
+  .loka-badge-between    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-400; }
+  .loka-badge-offline    { @apply inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400; }
 
   /* Section label */
   .loka-section-label {
-    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2;
+    @apply text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2;
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 2px;
+  }
+
+  .dark :focus-visible {
+    outline-color: #60A5FA;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .loka-input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.loka-shell {
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.loka-skip {
+  position: absolute;
+  left: 0.75rem;
+  top: -4rem;
+  z-index: 200;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.loka-skip:focus {
+  top: 0.75rem;
+}
+
+.loka-list {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (orientation: landscape) and (min-width: 600px) {
+  .loka-shell {
+    max-width: 52rem;
+  }
+
+  .loka-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .loka-nav a {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .loka-main {
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom)) !important;
   }
 }

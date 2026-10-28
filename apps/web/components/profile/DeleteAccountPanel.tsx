@@ -48,11 +48,12 @@ export default function DeleteAccountPanel() {
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
+            aria-label="Type DELETE to confirm"
             placeholder="Type DELETE to confirm"
             className="loka-input w-full"
             autoCapitalize="characters"
           />
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex gap-2">
             <button
               onClick={remove}

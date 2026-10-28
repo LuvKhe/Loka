@@ -87,7 +87,7 @@ export default function AddFriendClient() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 pt-2">
-        <button onClick={() => router.back()} className="text-sm text-gray-400 p-1 -ml-1">
+        <button onClick={() => router.back()} className="text-sm text-gray-500 p-1 -ml-1">
           Back
         </button>
         <h1 className="text-xl font-bold text-gray-900">Add Friend</h1>
@@ -103,13 +103,14 @@ export default function AddFriendClient() {
             type="text"
             value={lokaId}
             onChange={(e) => handleChange(e.target.value)}
+            aria-label="Friend Loka ID"
             placeholder="XXXX-XXXX"
             className={['loka-input w-full font-mono text-center text-lg tracking-widest', idError ? 'border-red-400' : ''].join(' ')}
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
           />
-          {idError && <p className="text-xs text-red-500 mt-1">{idError}</p>}
+          {idError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{idError}</p>}
         </div>
         <button
           type="submit"
@@ -130,7 +131,7 @@ export default function AddFriendClient() {
             </div>
             <div>
               <p className="font-semibold text-gray-900">{state.profile.displayName}</p>
-              <p className="text-xs font-mono text-gray-400">{state.profile.lokaId}</p>
+              <p className="text-xs font-mono text-gray-500">{state.profile.lokaId}</p>
             </div>
           </div>
           <button
@@ -167,7 +168,7 @@ export default function AddFriendClient() {
       {state.kind === 'sent' && (
         <div className="loka-card">
           <p className="text-sm text-gray-900 font-medium">Friend request sent</p>
-          <p className="text-xs text-gray-400 mt-0.5">They will see it when they open the app.</p>
+          <p className="text-xs text-gray-500 mt-0.5">They will see it when they open the app.</p>
         </div>
       )}
 

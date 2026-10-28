@@ -106,7 +106,7 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
               </button>
             )}
           </div>
-          {avatarError && <p className="text-xs text-red-500">{avatarError}</p>}
+          {avatarError && <p className="text-xs text-red-600 dark:text-red-400">{avatarError}</p>}
           <input
             ref={fileInput}
             type="file"
@@ -118,20 +118,20 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Display name</label>
-        <input
+        <label htmlFor="field-display-name" className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Display name</label>
+        <input id="field-display-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={50}
           className={['loka-input w-full', error ? 'border-red-400' : ''].join(' ')}
         />
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Bio</label>
-        <textarea
+        <label htmlFor="field-bio" className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Bio</label>
+        <textarea id="field-bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           maxLength={BIO_MAX}
@@ -140,12 +140,12 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
           className={['loka-input w-full resize-none', bioError ? 'border-red-400' : ''].join(' ')}
         />
         <div className="flex justify-between mt-1">
-          <span className="text-xs text-red-500">{bioError}</span>
-          <span className="text-xs text-gray-400 dark:text-slate-500">{bio.length}/{BIO_MAX}</span>
+          <span className="text-xs text-red-600 dark:text-red-400">{bioError}</span>
+          <span className="text-xs text-gray-500 dark:text-slate-400">{bio.length}/{BIO_MAX}</span>
         </div>
       </div>
 
-      {serverError && <p className="text-xs text-red-500">{serverError}</p>}
+      {serverError && <p className="text-xs text-red-600 dark:text-red-400">{serverError}</p>}
 
       <div className="flex gap-2 pt-2">
         <button

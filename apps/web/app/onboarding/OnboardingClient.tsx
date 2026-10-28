@@ -129,7 +129,7 @@ export default function OnboardingClient() {
           <div>
             <button
               onClick={() => setStep('welcome')}
-              className="text-sm text-gray-400 mb-4 -ml-1 px-1"
+              className="text-sm text-gray-500 mb-4 -ml-1 px-1"
             >
               Back
             </button>
@@ -145,13 +145,14 @@ export default function OnboardingClient() {
                 type="text"
                 value={displayName}
                 onChange={(e) => handleNameChange(e.target.value)}
+                aria-label="Your display name"
                 placeholder="Your name"
                 autoFocus
                 maxLength={40}
                 className={['loka-input w-full', nameError ? 'border-red-400 focus:ring-red-400' : ''].join(' ')}
               />
               {nameError && (
-                <p className="text-xs text-red-500 mt-1">{nameError}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{nameError}</p>
               )}
             </div>
 

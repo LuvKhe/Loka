@@ -203,6 +203,7 @@ export default function SelectClient() {
         <p className="loka-section-label">Programme</p>
         <div className="loka-card">
           <select
+            aria-label="Programme"
             className="loka-input w-full"
             value={programmeId}
             onChange={(e) => handleProgrammeSelect(e.target.value)}
@@ -276,7 +277,7 @@ export default function SelectClient() {
                   {lectures.length > 0 && (
                     <div className="space-y-1.5">
                       {groups.length > 0 && (
-                        <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Lectures</p>
+                        <p className="text-xs font-medium text-gray-500 dark:text-slate-400">Lectures</p>
                       )}
                       {lectures.map((slot) => {
                         const on = selected.has(slotKey(slot))
@@ -293,7 +294,7 @@ export default function SelectClient() {
                               <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                                 {slotLabel(slot)}
                               </span>
-                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                              <span className="text-xs text-gray-500 dark:text-slate-400 ml-2">
                                 {slot.venue}
                               </span>
                             </div>
@@ -311,7 +312,7 @@ export default function SelectClient() {
 
                   {groups.length > 0 && (
                     <div className={lectures.length > 0 ? 'mt-3' : ''}>
-                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5">
+                      <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">
                         Your group for {code}
                       </p>
                       <div className="flex gap-2 flex-wrap">
@@ -341,7 +342,7 @@ export default function SelectClient() {
                               className="text-xs text-gray-700 dark:text-gray-300"
                             >
                               {slotLabel(slot)}
-                              <span className="ml-2 text-gray-400 dark:text-gray-500">
+                              <span className="ml-2 text-gray-500 dark:text-slate-400">
                                 {slot.venue}
                               </span>
                             </p>
@@ -361,7 +362,7 @@ export default function SelectClient() {
             })}
           </div>
 
-          {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400 mt-3">{error}</p>}
         </section>
       )}
 

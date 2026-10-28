@@ -115,7 +115,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
       <div className="loka-card">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs text-gray-400 mb-0.5">On campus</p>
+            <p className="text-xs text-gray-500 mb-0.5">On campus</p>
             <p className="text-sm font-medium text-gray-900 truncate">{activeLocation.placeLabel}</p>
           </div>
           <button
@@ -135,7 +135,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
     return (
       <div className="loka-card">
         {panel.kind === 'error' && (
-          <p className="text-xs text-red-500 mb-2">{panel.message}</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mb-2">{panel.message}</p>
         )}
         <button
           onClick={openPicker}
@@ -150,7 +150,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
   if (panel.kind === 'loading_buildings' || panel.kind === 'checking_in') {
     return (
       <div className="loka-card">
-        <p className="text-sm text-gray-400 text-center py-1">
+        <p className="text-sm text-gray-500 text-center py-1">
           {panel.kind === 'loading_buildings' ? 'Loading locations...' : 'Checking in...'}
         </p>
       </div>
@@ -167,7 +167,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
           <p className="text-sm text-gray-500">No campus locations set up yet.</p>
           <button
             onClick={() => setPanel({ kind: 'idle' })}
-            className="text-xs text-gray-400 mt-2"
+            className="text-xs text-gray-500 mt-2"
           >
             Cancel
           </button>
@@ -194,7 +194,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
           <p className="text-sm font-medium text-gray-900">Where are you?</p>
           <button
             onClick={() => setPanel({ kind: 'idle' })}
-            className="text-xs text-gray-400"
+            className="text-xs text-gray-500"
           >
             Cancel
           </button>
@@ -209,6 +209,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
               prev.kind === 'picking' ? { ...prev, query: e.target.value } : prev,
             )
           }
+          aria-label="Search rooms"
           placeholder="Search rooms..."
           className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:border-blue-300 focus:bg-white transition-colors"
           autoFocus
@@ -220,7 +221,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
           {sections &&
             sections.map((section) => (
               <div key={section.label}>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide px-1 mb-1">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide px-1 mb-1">
                   {section.label}
                 </p>
                 <div className="space-y-0.5">
@@ -234,7 +235,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
           {/* Flat search results */}
           {!sections &&
             (filtered.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-3">No results</p>
+              <p className="text-sm text-gray-500 text-center py-3">No results</p>
             ) : (
               <div className="space-y-0.5">
                 {filtered.map((b) => (
@@ -264,7 +265,7 @@ function BuildingRow({
     >
       <span className="font-medium text-gray-900">{building.name}</span>
       {building.abbreviation && (
-        <span className="text-gray-400 text-xs shrink-0">{building.abbreviation}</span>
+        <span className="text-gray-500 text-xs shrink-0">{building.abbreviation}</span>
       )}
     </button>
   )

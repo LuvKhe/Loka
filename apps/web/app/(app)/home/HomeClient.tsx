@@ -150,7 +150,7 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{state.currentClass.venue}</p>
               )}
               {state.timeRemainingSeconds != null && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                   Ends {formatTime(state.currentClass.endTime)}
                   {' '}· {formatDuration(state.timeRemainingSeconds)} remaining
                 </p>
@@ -160,14 +160,14 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
 
           {!isManual && state?.nextClass && !state?.currentClass && (
             <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-1">Next</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Next</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{state.nextClass.subjectCode}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {formatTime(state.nextClass.startTime)}
                 {state.nextClass.venue && ` · ${state.nextClass.venue}`}
               </p>
               {state.timeUntilNextSeconds != null && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                   {state.timeUntilNextSeconds >= 24 * 60 * 60
                     ? DAY_NAMES[state.nextClass.dayOfWeek]
                     : `In ${formatDuration(state.timeUntilNextSeconds)}`}
@@ -217,20 +217,20 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
       <section>
         <div className="flex items-center justify-between">
           <p className="loka-section-label">Friends</p>
-          <Link href="/friends" className="text-xs text-blue-500 pb-1">
+          <Link href="/friends" className="text-xs text-blue-700 dark:text-blue-400 pb-1">
             See all
           </Link>
         </div>
 
         {friendsData.length === 0 ? (
           <div className="loka-card">
-            <p className="text-sm text-gray-400 mb-2">No friends yet.</p>
+            <p className="text-sm text-gray-500 mb-2">No friends yet.</p>
             <Link href="/friends/add" className="loka-btn-primary py-2 px-3 text-xs inline-block">
               Add a friend
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="loka-list">
             {friendsData.map((friend) => (
               <Link
                 key={friend.id}
@@ -243,11 +243,11 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <StatusBadge status={friend.status} />
                     {friend.currentClass && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{friend.currentClass}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{friend.currentClass}</p>
                     )}
                   </div>
                   {friendLocations[friend.id] && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
                       {friendLocations[friend.id]}
                     </p>
                   )}

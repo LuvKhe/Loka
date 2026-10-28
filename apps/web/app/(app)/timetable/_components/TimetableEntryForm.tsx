@@ -146,8 +146,8 @@ export default function TimetableEntryForm({ existing }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Subject code */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Subject code *</label>
-        <input
+        <label htmlFor="field-subject-code" className="block text-xs font-medium text-gray-500 mb-1">Subject code *</label>
+        <input id="field-subject-code"
           type="text"
           value={form.subjectCode}
           onChange={(e) => set('subjectCode', e.target.value)}
@@ -155,13 +155,13 @@ export default function TimetableEntryForm({ existing }: Props) {
           className={['loka-input w-full', errors.subjectCode ? 'border-red-400' : ''].join(' ')}
           autoCapitalize="characters"
         />
-        {errors.subjectCode && <p className="text-xs text-red-500 mt-1">{errors.subjectCode}</p>}
+        {errors.subjectCode && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.subjectCode}</p>}
       </div>
 
       {/* Subject name */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Subject name</label>
-        <input
+        <label htmlFor="field-subject-name" className="block text-xs font-medium text-gray-500 mb-1">Subject name</label>
+        <input id="field-subject-name"
           type="text"
           value={form.subjectName}
           onChange={(e) => set('subjectName', e.target.value)}
@@ -172,8 +172,8 @@ export default function TimetableEntryForm({ existing }: Props) {
 
       {/* Day */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Day *</label>
-        <select
+        <label htmlFor="field-day" className="block text-xs font-medium text-gray-500 mb-1">Day *</label>
+        <select id="field-day"
           value={form.dayOfWeek}
           onChange={(e) => set('dayOfWeek', Number(e.target.value))}
           className={['loka-input w-full', errors.dayOfWeek ? 'border-red-400' : ''].join(' ')}
@@ -182,38 +182,38 @@ export default function TimetableEntryForm({ existing }: Props) {
             <option key={d.value} value={d.value}>{d.label}</option>
           ))}
         </select>
-        {errors.dayOfWeek && <p className="text-xs text-red-500 mt-1">{errors.dayOfWeek}</p>}
+        {errors.dayOfWeek && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.dayOfWeek}</p>}
       </div>
 
       {/* Time */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Start time *</label>
-          <input
+          <label htmlFor="field-start-time" className="block text-xs font-medium text-gray-500 mb-1">Start time *</label>
+          <input id="field-start-time"
             type="time"
             value={form.startTime}
             onChange={(e) => set('startTime', e.target.value)}
             className={['loka-input w-full font-mono', errors.startTime ? 'border-red-400' : ''].join(' ')}
           />
-          {errors.startTime && <p className="text-xs text-red-500 mt-1">{errors.startTime}</p>}
+          {errors.startTime && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.startTime}</p>}
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">End time *</label>
-          <input
+          <label htmlFor="field-end-time" className="block text-xs font-medium text-gray-500 mb-1">End time *</label>
+          <input id="field-end-time"
             type="time"
             value={form.endTime}
             onChange={(e) => set('endTime', e.target.value)}
             className={['loka-input w-full font-mono', errors.endTime ? 'border-red-400' : ''].join(' ')}
           />
-          {errors.endTime && <p className="text-xs text-red-500 mt-1">{errors.endTime}</p>}
+          {errors.endTime && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.endTime}</p>}
         </div>
       </div>
-      {errors.timeRange && <p className="text-xs text-red-500 -mt-2">{errors.timeRange}</p>}
+      {errors.timeRange && <p className="text-xs text-red-600 dark:text-red-400 -mt-2">{errors.timeRange}</p>}
 
       {/* Optional fields */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Group / section</label>
-        <input
+        <label htmlFor="field-group-section" className="block text-xs font-medium text-gray-500 mb-1">Group / section</label>
+        <input id="field-group-section"
           type="text"
           value={form.groupName}
           onChange={(e) => set('groupName', e.target.value)}
@@ -223,8 +223,8 @@ export default function TimetableEntryForm({ existing }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Venue</label>
-        <input
+        <label htmlFor="field-venue" className="block text-xs font-medium text-gray-500 mb-1">Venue</label>
+        <input id="field-venue"
           type="text"
           value={form.venue}
           onChange={(e) => set('venue', e.target.value)}
@@ -234,8 +234,8 @@ export default function TimetableEntryForm({ existing }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Room</label>
-        <input
+        <label htmlFor="field-room" className="block text-xs font-medium text-gray-500 mb-1">Room</label>
+        <input id="field-room"
           type="text"
           value={form.room}
           onChange={(e) => set('room', e.target.value)}
@@ -245,8 +245,8 @@ export default function TimetableEntryForm({ existing }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Lecturer</label>
-        <input
+        <label htmlFor="field-lecturer" className="block text-xs font-medium text-gray-500 mb-1">Lecturer</label>
+        <input id="field-lecturer"
           type="text"
           value={form.lecturer}
           onChange={(e) => set('lecturer', e.target.value)}
@@ -256,8 +256,8 @@ export default function TimetableEntryForm({ existing }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
-        <textarea
+        <label htmlFor="field-notes" className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+        <textarea id="field-notes"
           value={form.notes}
           onChange={(e) => set('notes', e.target.value)}
           placeholder="Any additional notes..."
@@ -267,7 +267,7 @@ export default function TimetableEntryForm({ existing }: Props) {
       </div>
 
       {serverError && (
-        <p className="text-xs text-red-500">{serverError}</p>
+        <p className="text-xs text-red-600 dark:text-red-400">{serverError}</p>
       )}
 
       <div className="space-y-2 pt-2">

@@ -42,10 +42,11 @@ export default function ThemeToggle() {
           <button
             key={o.value}
             onClick={() => choose(o.value)}
+            aria-pressed={theme === o.value}
             className={[
               'flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
               theme === o.value
-                ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500'
+                ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-700 dark:border-blue-700'
                 : 'bg-white border-gray-300 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200',
             ].join(' ')}
           >

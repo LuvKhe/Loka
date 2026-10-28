@@ -70,7 +70,7 @@ export default async function TimetablePage() {
       {mapped.length === 0 ? (
         <div className="loka-card">
           <p className="font-medium text-gray-900 text-sm mb-1">No classes yet</p>
-          <p className="text-sm text-gray-400 mb-3">
+          <p className="text-sm text-gray-500 mb-3">
             Browse official UNESWA class times by programme, or add a class manually.
           </p>
           <div className="flex gap-2 flex-wrap">
@@ -86,7 +86,7 @@ export default async function TimetablePage() {
         activeDays.map((day) => (
           <section key={day}>
             <p className="loka-section-label">{DAY_NAMES[day]}</p>
-            <div className="space-y-2">
+            <div className="loka-list">
               {grouped[day]!.map((entry) => (
                 <Link
                   key={entry.id}
@@ -96,7 +96,7 @@ export default async function TimetablePage() {
                   <div className="flex items-start gap-3">
                     <div className="shrink-0 text-right min-w-[4rem]">
                       <p className="text-xs font-mono text-gray-500">{entry.startTime.slice(0, 5)}</p>
-                      <p className="text-xs font-mono text-gray-400">{entry.endTime.slice(0, 5)}</p>
+                      <p className="text-xs font-mono text-gray-500">{entry.endTime.slice(0, 5)}</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm text-gray-900">{entry.subjectCode}</p>
@@ -105,10 +105,10 @@ export default async function TimetablePage() {
                       )}
                       <div className="flex gap-2 mt-0.5 flex-wrap">
                         {entry.groupName && (
-                          <p className="text-xs text-gray-400">Group {entry.groupName}</p>
+                          <p className="text-xs text-gray-500">Group {entry.groupName}</p>
                         )}
                         {entry.venue && (
-                          <p className="text-xs text-gray-400">{entry.venue}</p>
+                          <p className="text-xs text-gray-500">{entry.venue}</p>
                         )}
                       </div>
                     </div>

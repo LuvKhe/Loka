@@ -116,7 +116,7 @@ export default async function FriendProfilePage({ params }: Props) {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 pt-2">
-        <Link href="/friends" className="text-sm text-gray-400 p-1 -ml-1">
+        <Link href="/friends" className="text-sm text-gray-500 p-1 -ml-1">
           Back
         </Link>
         <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Friend</h1>
@@ -141,7 +141,7 @@ export default async function FriendProfilePage({ params }: Props) {
 
         {(shareLocation || friendLocation) && (
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-            <p className="text-xs text-gray-400 mb-0.5">Location</p>
+            <p className="text-xs text-gray-500 mb-0.5">Location</p>
             <p className="text-sm text-gray-700 dark:text-slate-300">
               {friendLocation ?? 'Not checked in'}
             </p>
@@ -155,7 +155,7 @@ export default async function FriendProfilePage({ params }: Props) {
           <div className="loka-card space-y-3">
             {nowClass && (
               <div>
-                <p className="text-xs text-gray-400">Now</p>
+                <p className="text-xs text-gray-500">Now</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nowClass}</p>
                 {state.currentClass?.venue && (
                   <p className="text-xs text-gray-500 dark:text-slate-400">{state.currentClass.venue}</p>
@@ -164,7 +164,7 @@ export default async function FriendProfilePage({ params }: Props) {
             )}
             {nextClass && (
               <div>
-                <p className="text-xs text-gray-400">Next</p>
+                <p className="text-xs text-gray-500">Next</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{nextClass}</p>
                 {state.nextClass && (
                   <p className="text-xs text-gray-500 dark:text-slate-400">
@@ -182,14 +182,14 @@ export default async function FriendProfilePage({ params }: Props) {
         <p className="loka-section-label">Timetable</p>
         {!shareClass ? (
           <div className="loka-card">
-            <p className="text-sm text-gray-400">This friend keeps their timetable private.</p>
+            <p className="text-sm text-gray-500">This friend keeps their timetable private.</p>
           </div>
         ) : days.length === 0 ? (
           <div className="loka-card">
-            <p className="text-sm text-gray-400">No timetable added yet.</p>
+            <p className="text-sm text-gray-500">No timetable added yet.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="loka-list">
             {days.map((d) => (
               <div key={d} className="loka-card">
                 <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">{DAY_NAMES[d]}</p>
@@ -199,7 +199,7 @@ export default async function FriendProfilePage({ params }: Props) {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
                           {e.subjectCode}
-                          {e.groupName ? <span className="text-gray-400 font-normal"> Group {e.groupName}</span> : null}
+                          {e.groupName ? <span className="text-gray-500 font-normal"> Group {e.groupName}</span> : null}
                         </p>
                         {e.venue && <p className="text-xs text-gray-500 dark:text-slate-400">{e.venue}</p>}
                       </div>
