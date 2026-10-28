@@ -2,21 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { TimetableEntry } from '@loka/shared/types'
-
-const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-function groupByDay(entries: TimetableEntry[]) {
-  const grouped: Record<number, TimetableEntry[]> = {}
-  for (const e of entries) {
-    if (!grouped[e.dayOfWeek]) grouped[e.dayOfWeek] = []
-    grouped[e.dayOfWeek]!.push(e)
-  }
-  // Sort within each day by start time
-  for (const day of Object.keys(grouped)) {
-    grouped[Number(day)]!.sort((a, b) => a.startTime.localeCompare(b.startTime))
-  }
-  return grouped
-}
+import TimetableView from '@/components/timetable/TimetableView'
 
 export default async function TimetablePage() {
   const supabase = await createClient()
@@ -50,74 +36,40 @@ export default async function TimetablePage() {
     updatedAt: e.updated_at,
   }))
 
-  const grouped = groupByDay(mapped)
-  const activeDays = [1, 2, 3, 4, 5, 6, 7].filter((d) => grouped[d]?.length)
-
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between pt-2">
-        <h1 className="text-xl font-bold text-gray-900">Timetable</h1>
+    <div className="p-4 space-y-5">
+      <div className="flex items-center justify-between pt-2 gap-3">
+        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Timetable</h1>
         <div className="flex gap-2">
-          <Link href="/timetable/select" className="loka-btn-secondary py-2 px-3 text-xs">
+          <Link href="/timetable/select" className="loka-btn-secondary py-2.5 px-3.5 text-sm min-h-[2.75rem]">
             Browse
           </Link>
-          <Link href="/timetable/new" className="loka-btn-primary py-2 px-3 text-xs">
-            Add Class
+          <Link href="/timetable/new" className="loka-btn-primary py-2.5 px-3.5 text-sm min-h-[2.75rem]">
+            Add class
           </Link>
         </div>
       </div>
 
       {mapped.length === 0 ? (
-        <div className="loka-card">
-          <p className="font-medium text-gray-900 text-sm mb-1">No classes yet</p>
-          <p className="text-sm text-gray-500 mb-3">
-            Browse official UNESWA class times by programme, or add a class manually.
+        <div className="loka-card text-center py-10">
+          <svg viewBox="0 0 120 80" className="w-32 mx-auto mb-4" aria-hidden="true">
+            <rect x="8" y="10" width="104" height="62" rx="10" className="fill-blue-100 dark:fill-blue-900/40" />
+            <rect x="20" y="22" width="22" height="14" rx="4" className="fill-blue-500" />
+            <rect x="48" y="22" width="30" height="14" rx="4" className="fill-emerald-500" />
+            <rect x="20" y="42" width="34" height="14" rx="4" className="fill-violet-500" />
+            <rect x="60" y="42" width="22" height="14" rx="4" className="fill-amber-500" />
+          </svg>
+          <p className="font-bold text-lg text-gray-900 dark:text-gray-100">Your week is a blank page</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-5">
+            Pick your programme to load official UNESWA times, or add a class yourself.
           </p>
-          <div className="flex gap-2 flex-wrap">
-            <Link href="/timetable/select" className="loka-btn-primary py-2 px-3 text-xs">
-              Browse by programme
-            </Link>
-            <Link href="/timetable/new" className="loka-btn-secondary py-2 px-3 text-xs">
-              Add manually
-            </Link>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <Link href="/timetable/select" className="loka-btn-primary min-h-[2.75rem]">Browse by programme</Link>
+            <Link href="/timetable/new" className="loka-btn-secondary min-h-[2.75rem]">Add manually</Link>
           </div>
         </div>
       ) : (
-        activeDays.map((day) => (
-          <section key={day}>
-            <p className="loka-section-label">{DAY_NAMES[day]}</p>
-            <div className="loka-list">
-              {grouped[day]!.map((entry) => (
-                <Link
-                  key={entry.id}
-                  href={`/timetable/${entry.id}/edit`}
-                  className="loka-card block hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="shrink-0 text-right min-w-[4rem]">
-                      <p className="text-xs font-mono text-gray-500">{entry.startTime.slice(0, 5)}</p>
-                      <p className="text-xs font-mono text-gray-500">{entry.endTime.slice(0, 5)}</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm text-gray-900">{entry.subjectCode}</p>
-                      {entry.subjectName && (
-                        <p className="text-xs text-gray-500 truncate">{entry.subjectName}</p>
-                      )}
-                      <div className="flex gap-2 mt-0.5 flex-wrap">
-                        {entry.groupName && (
-                          <p className="text-xs text-gray-500">Group {entry.groupName}</p>
-                        )}
-                        {entry.venue && (
-                          <p className="text-xs text-gray-500">{entry.venue}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))
+        <TimetableView entries={mapped} />
       )}
     </div>
   )

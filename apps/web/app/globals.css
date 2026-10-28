@@ -225,3 +225,15 @@
     padding-bottom: calc(3rem + env(safe-area-inset-bottom)) !important;
   }
 }
+
+.loka-draw {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: loka-draw 0.6s ease-out 0.15s forwards;
+}
+@keyframes loka-draw {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loka-draw { stroke-dashoffset: 0; animation: none; }
+}
