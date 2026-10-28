@@ -41,6 +41,28 @@ export function validateBio(bio: unknown): ValidationResult {
   return { ok: true }
 }
 
+export const AVATAR_PREFIX = 'data:image/jpeg;base64,'
+export const AVATAR_MAX_LENGTH = 60000
+
+export function validateAvatarDataUrl(value: unknown): ValidationResult {
+  if (typeof value !== 'string') return { ok: false, error: 'Invalid image' }
+  if (!value.startsWith(AVATAR_PREFIX)) return { ok: false, error: 'Image must be a JPEG' }
+  if (value.length > AVATAR_MAX_LENGTH) return { ok: false, error: 'Image is too large' }
+  const data = value.slice(AVATAR_PREFIX.length)
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(data) || data.length < 16) {
+    return { ok: false, error: 'Invalid image data' }
+  }
+  try {
+    const head = atob(data.slice(0, 8))
+    if (head.charCodeAt(0) !== 0xff || head.charCodeAt(1) !== 0xd8 || head.charCodeAt(2) !== 0xff) {
+      return { ok: false, error: 'Image must be a JPEG' }
+    }
+  } catch {
+    return { ok: false, error: 'Invalid image data' }
+  }
+  return { ok: true }
+}
+
 export function validateSubjectCode(code: string): ValidationResult {
   if (!code || typeof code !== 'string') {
     return { ok: false, error: 'Subject code is required' }

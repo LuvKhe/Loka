@@ -7,6 +7,8 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { STATUS_LABELS } from '@loka/shared/constants'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Avatar from '@/components/ui/Avatar'
+import { createClient } from '@/lib/supabase/client'
 import CheckInPanel from '@/components/location/CheckInPanel'
 import InstallBanner from '@/components/ui/InstallBanner'
 
@@ -38,6 +40,7 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
   const [state, setState] = useState<TimetableState | null>(null)
   const [now, setNow] = useState(new Date())
   const [settingOverride, setSettingOverride] = useState(false)
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({})
 
   // Recompute status every 30 seconds
   useEffect(() => {
@@ -50,6 +53,24 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
     const interval = setInterval(compute, 30_000)
     return () => clearInterval(interval)
   }, [timetableEntries, profile?.statusOverride])
+
+  const friendKey = friendsData.map((f) => f.id).join(',')
+
+  useEffect(() => {
+    if (!friendKey) return
+    let cancelled = false
+    createClient()
+      .from('profiles')
+      .select('id, avatar_url')
+      .in('id', friendKey.split(','))
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        setAvatars(Object.fromEntries(data.map((r) => [r.id as string, (r.avatar_url as string | null) ?? null])))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [friendKey])
 
   async function setFree() {
     setSettingOverride(true)
@@ -216,11 +237,7 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                 href={`/friends/${friend.id}`}
                 className="loka-card flex items-center gap-3 hover:bg-gray-50 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
-                    {friend.displayName[0]?.toUpperCase()}
-                  </span>
-                </div>
+                <Avatar url={avatars[friend.id]} name={friend.displayName} size={40} />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{friend.displayName}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">

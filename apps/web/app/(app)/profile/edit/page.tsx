@@ -21,6 +21,7 @@ export default async function ProfileEditPage() {
         userId={user.id}
         displayName={profile?.display_name ?? ''}
         bio={profile?.bio ?? ''}
+        avatarUrl={profile?.avatar_url ?? null}
       />
     </div>
   )

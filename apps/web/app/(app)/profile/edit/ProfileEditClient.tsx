@@ -1,27 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { validateDisplayName, validateBio } from '@loka/shared/validation'
+import Avatar from '@/components/ui/Avatar'
+import { fileToAvatarDataUrl } from '@/lib/avatar'
 
 interface Props {
   userId: string
   displayName: string
   bio: string
+  avatarUrl: string | null
 }
 
 const BIO_MAX = 160
 
-export default function ProfileEditClient({ displayName: initialName, bio: initialBio }: Props) {
+export default function ProfileEditClient({ displayName: initialName, bio: initialBio, avatarUrl: initialAvatar }: Props) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
   const [bio, setBio] = useState(initialBio)
+  const [avatar, setAvatar] = useState<string | null>(initialAvatar)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [bioError, setBioError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
 
-  const changed = name.trim() !== initialName || bio.trim() !== initialBio.trim()
+  const changed =
+    name.trim() !== initialName || bio.trim() !== initialBio.trim() || avatar !== initialAvatar
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setAvatarError(null)
+    try {
+      setAvatar(await fileToAvatarDataUrl(file))
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'That image could not be used')
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,7 +64,11 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: name.trim(), bio: bio.trim() }),
+        body: JSON.stringify({
+          displayName: name.trim(),
+          bio: bio.trim(),
+          ...(avatar !== initialAvatar ? { avatarUrl: avatar } : {}),
+        }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -62,6 +85,38 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center gap-4">
+        <Avatar url={avatar} name={name} size={80} />
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="loka-btn-secondary py-2 px-4 text-xs"
+            >
+              {avatar ? 'Change photo' : 'Add photo'}
+            </button>
+            {avatar && (
+              <button
+                type="button"
+                onClick={() => setAvatar(null)}
+                className="loka-btn-secondary py-2 px-4 text-xs"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {avatarError && <p className="text-xs text-red-500">{avatarError}</p>}
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            onChange={handleFile}
+            className="hidden"
+          />
+        </div>
+      </div>
+
       <div>
         <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Display name</label>
         <input

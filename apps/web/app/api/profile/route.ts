@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { validateDisplayName, validateBio } from '@loka/shared/validation'
+import { validateDisplayName, validateBio, validateAvatarDataUrl } from '@loka/shared/validation'
 
 export async function PATCH(request: Request) {
   try {
@@ -26,6 +26,16 @@ export async function PATCH(request: Request) {
       const result = validateDisplayName(body.displayName)
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
       update.display_name = body.displayName
+    }
+
+    if ('avatarUrl' in body) {
+      if (body.avatarUrl === null) {
+        update.avatar_url = null
+      } else {
+        const result = validateAvatarDataUrl(body.avatarUrl)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        update.avatar_url = body.avatarUrl
+      }
     }
 
     if ('bio' in body) {

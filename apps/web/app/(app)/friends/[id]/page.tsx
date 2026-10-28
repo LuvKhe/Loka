@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import StatusBadge from '@/components/ui/StatusBadge'
+import Avatar from '@/components/ui/Avatar'
 import { computeTimetableState, formatTime } from '@loka/shared/timetable'
 import type { TimetableEntry } from '@loka/shared/types'
 
@@ -123,11 +124,7 @@ export default async function FriendProfilePage({ params }: Props) {
 
       <div className="loka-card">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <span className="text-blue-600 font-bold text-xl">
-              {(profile.display_name ?? '?')[0]?.toUpperCase()}
-            </span>
-          </div>
+          <Avatar url={profile.avatar_url ?? null} name={profile.display_name} size={56} />
           <div className="min-w-0">
             <p className="font-bold text-gray-900 dark:text-slate-100 break-words">{profile.display_name}</p>
             {profile.university && (

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Avatar from '@/components/ui/Avatar'
 import FriendRequestActions from './_components/FriendRequestActions'
 
 export default async function FriendsPage() {
@@ -47,11 +48,14 @@ export default async function FriendsPage() {
               const p = profileMap[req.from_user_id]
               return (
                 <div key={req.id} className="loka-card flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {p?.display_name ?? 'Unknown'}
-                    </p>
-                    <p className="text-xs text-gray-400">{p?.loka_id ?? ''}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar url={p?.avatar_url} name={p?.display_name} size={40} />
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">
+                        {p?.display_name ?? 'Unknown'}
+                      </p>
+                      <p className="text-xs text-gray-400">{p?.loka_id ?? ''}</p>
+                    </div>
                   </div>
                   <FriendRequestActions requestId={req.id} />
                 </div>
@@ -79,11 +83,7 @@ export default async function FriendsPage() {
               return (
                 <Link key={fid} href={`/friends/${fid}`} className="loka-card block hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                      <span className="text-blue-600 font-semibold text-sm">
-                        {p?.display_name?.[0]?.toUpperCase() ?? '?'}
-                      </span>
-                    </div>
+                    <Avatar url={p?.avatar_url} name={p?.display_name} size={40} />
                     <div className="min-w-0">
                       <p className="font-medium text-gray-900 text-sm truncate">
                         {p?.display_name ?? 'Unknown'}

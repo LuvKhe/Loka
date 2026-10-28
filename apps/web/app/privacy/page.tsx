@@ -8,7 +8,7 @@ export default function PrivacyPage() {
     <LegalLayout title="Privacy Policy">
       <LegalSection title="What we collect">
         <ul className="list-disc pl-5 space-y-1">
-          <li>Your display name and an optional avatar.</li>
+          <li>Your display name, an optional short bio, and an optional profile photo.</li>
           <li>Your Loka ID, a short public identifier generated for you. It is not derived from any personal detail.</li>
           <li>A hash of your recovery code. The code itself is shown once and is never stored.</li>
           <li>Your timetable entries: module codes, days, times, groups, and venues.</li>
@@ -28,6 +28,13 @@ export default function PrivacyPage() {
         <p>
           Only friends you have accepted can see your status and campus location, and only what your privacy settings
           allow. Nobody else can see your timetable or location. Loka does not sell your data and does not show ads.
+        </p>
+      </LegalSection>
+      <LegalSection title="Profile photos">
+        <p>
+          Photos are cropped, shrunk, and re-encoded on your device before they are saved, which removes hidden data
+          such as the location a photo was taken. Only you, your friends, and people with a pending friend request
+          with you can see your photo. You can remove it at any time from Edit Profile.
         </p>
       </LegalSection>
       <LegalSection title="No account details">
