@@ -19,6 +19,7 @@ interface FriendStatus {
   displayName: string
   status: string
   currentClass: string | null
+  endsAt?: number | null
 }
 
 interface ActiveLocation {
@@ -244,6 +245,11 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                     <StatusBadge status={friend.status} />
                     {friend.currentClass && (
                       <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{friend.currentClass}</p>
+                    )}
+                    {friend.currentClass && friend.endsAt != null && now !== null && friend.endsAt > now.getTime() && (
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 tabular-nums">
+                        Ends in {formatDuration(Math.round((friend.endsAt - (now as Date).getTime()) / 1000))}
+                      </p>
                     )}
                   </div>
                   {friendLocations[friend.id] && (

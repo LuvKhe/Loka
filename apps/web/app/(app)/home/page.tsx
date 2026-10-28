@@ -97,6 +97,7 @@ export default async function HomePage() {
     displayName: string
     status: string
     currentClass: string | null
+    endsAt: number | null
   }> = []
 
   if (friendIds.length > 0) {
@@ -126,14 +127,16 @@ export default async function HomePage() {
       const canSeeClass = privacy?.share_current_class !== false
 
       let currentClass: string | null = null
+      let endsAt: number | null = null
       if (canSeeClass && state.currentClass) {
         currentClass = state.currentClass.subjectCode
+        if (state.timeRemainingSeconds != null) endsAt = now.getTime() + state.timeRemainingSeconds * 1000
         if (state.currentClass.subjectName) {
           currentClass += ` — ${state.currentClass.subjectName}`
         }
       }
 
-      return { id: fp.id, displayName: fp.display_name, status: state.status, currentClass }
+      return { id: fp.id, displayName: fp.display_name, status: state.status, currentClass, endsAt }
     })
 
     const ORDER: Record<string, number> = {
