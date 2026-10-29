@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { TimetableEntry } from '@loka/shared/types'
 import { subjectColor } from '@/lib/subject-color'
+import { campusNow } from '@loka/shared/timetable'
 
 const DAY_FULL = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAY_SHORT = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -39,7 +40,7 @@ export default function TimetableView({
   const [picked, setPicked] = useState<number | null>(null)
 
   useEffect(() => {
-    const tick = () => setNow(nowParts(new Date()))
+    const tick = () => setNow(nowParts(campusNow()))
     tick()
     const id = setInterval(tick, 30000)
     return () => clearInterval(id)

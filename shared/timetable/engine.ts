@@ -11,6 +11,16 @@
 import type { TimetableEntry, TimetableState, TimetableStatus, DayOfWeek } from '../types/index.js'
 import { FREE_OVERRIDE_VALUE } from '../constants/index.js'
 
+export const CAMPUS_TIMEZONE = 'Africa/Mbabane'
+
+export function campusNow(base: Date = new Date()): Date {
+  try {
+    return new Date(base.toLocaleString('en-US', { timeZone: CAMPUS_TIMEZONE }))
+  } catch {
+    return base
+  }
+}
+
 // Parse "HH:MM" into total minutes since midnight
 function parseTime(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number)

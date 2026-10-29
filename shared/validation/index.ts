@@ -116,3 +116,16 @@ export function validateTimetableImage(file: { size: number; type: string }): Va
   }
   return { ok: true }
 }
+
+const CUSTOM_PLACE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .,'&()/#-]*$/
+
+export function validateCustomPlace(value: unknown): ValidationResult {
+  if (typeof value !== 'string') return { ok: false, error: 'Enter a place name' }
+  const v = value.trim()
+  if (v.length < 2) return { ok: false, error: 'Place name is too short' }
+  if (v.length > 40) return { ok: false, error: 'Place name must be 40 characters or fewer' }
+  if (!CUSTOM_PLACE_PATTERN.test(v)) {
+    return { ok: false, error: 'Use letters, numbers and basic punctuation only' }
+  }
+  return { ok: true }
+}

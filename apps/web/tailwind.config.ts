@@ -11,6 +11,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        slate: {
+          600: '#2C2C30',
+          700: '#1F1F23',
+          800: '#111113',
+          900: '#000000',
+          950: '#000000',
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
       },

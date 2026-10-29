@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { computeTimetableState, formatTime, formatDuration } from '@loka/shared/timetable'
+import { computeTimetableState, formatTime, formatDuration, campusNow } from '@loka/shared/timetable'
 import type { TimetableEntry, TimetableState, Profile, PrivacySettings } from '@loka/shared/types'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { STATUS_LABELS } from '@loka/shared/constants'
@@ -39,14 +39,14 @@ interface Props {
 export default function HomeClient({ profile, timetableEntries, friendsData, activeLocation, friendLocations }: Props) {
   const router = useRouter()
   const [state, setState] = useState<TimetableState | null>(null)
-  const [now, setNow] = useState(new Date())
+  const [now, setNow] = useState(() => campusNow())
   const [settingOverride, setSettingOverride] = useState(false)
   const [avatars, setAvatars] = useState<Record<string, string | null>>({})
 
   // Recompute status every 30 seconds
   useEffect(() => {
     const compute = () => {
-      const current = new Date()
+      const current = campusNow()
       setNow(current)
       setState(computeTimetableState(timetableEntries, current, profile?.statusOverride ?? null))
     }
@@ -54,6 +54,18 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
     const interval = setInterval(compute, 30_000)
     return () => clearInterval(interval)
   }, [timetableEntries, profile?.statusOverride])
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') router.refresh()
+    }
+    const id = setInterval(refresh, 60_000)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [router])
 
   const friendKey = friendsData.map((f) => f.id).join(',')
 
@@ -211,7 +223,14 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
       {/* Campus check-in */}
       <section>
         <p className="loka-section-label">Location</p>
-        <CheckInPanel activeLocation={activeLocation} />
+        <CheckInPanel
+          activeLocation={activeLocation}
+          currentClass={
+            state?.currentClass?.venue
+              ? { key: `${state.currentClass.id}-${now.getFullYear()}${now.getMonth()}${now.getDate()}`, venue: state.currentClass.venue }
+              : null
+          }
+        />
       </section>
 
       {/* Friends */}
@@ -246,9 +265,9 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
                     {friend.currentClass && (
                       <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{friend.currentClass}</p>
                     )}
-                    {friend.currentClass && friend.endsAt != null && now !== null && friend.endsAt > now.getTime() && (
+                    {friend.currentClass && friend.endsAt != null && friend.endsAt > Date.now() && (
                       <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 tabular-nums">
-                        Ends in {formatDuration(Math.round((friend.endsAt - (now as Date).getTime()) / 1000))}
+                        Ends in {formatDuration(Math.round((friend.endsAt - Date.now()) / 1000))}
                       </p>
                     )}
                   </div>

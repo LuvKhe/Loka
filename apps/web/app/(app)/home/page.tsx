@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import HomeClient from './HomeClient'
-import { computeTimetableState } from '@loka/shared/timetable'
+import { computeTimetableState, campusNow } from '@loka/shared/timetable'
 import type { TimetableEntry, Profile, PrivacySettings } from '@loka/shared/types'
 
 interface ActiveLocation {
@@ -61,10 +61,12 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [profileRes, timetableRes, privacyRes] = await Promise.all([
+  const [profileRes, timetableRes, privacyRes, locationRes, friendshipsRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('timetable_entries').select('*').eq('user_id', user.id).eq('is_active', true),
     supabase.from('privacy_settings').select('*').eq('user_id', user.id).single(),
+    supabase.from('active_locations').select('place_label, campus_building_id').eq('user_id', user.id).maybeSingle(),
+    supabase.from('friendships').select('user_a, user_b').or(`user_a.eq.${user.id},user_b.eq.${user.id}`),
   ])
 
   const profile = profileRes.data ? mapProfile(profileRes.data) : null
@@ -73,20 +75,13 @@ export default async function HomePage() {
   const timetableEntries = (timetableRes.data ?? []).map(mapEntry)
   const privacySettings = privacyRes.data ? mapPrivacy(privacyRes.data) : null
 
-  const { data: locationRow } = await supabase
-    .from('active_locations')
-    .select('place_label, campus_building_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const locationRow = locationRes.data
 
   const activeLocation: ActiveLocation | null = locationRow
     ? { placeLabel: locationRow.place_label, campusBuildingId: locationRow.campus_building_id ?? null }
     : null
 
-  const { data: friendships } = await supabase
-    .from('friendships')
-    .select('user_a, user_b')
-    .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
+  const friendships = friendshipsRes.data
 
   const friendIds = (friendships ?? []).map((f) =>
     f.user_a === user.id ? f.user_b : f.user_a,
@@ -119,7 +114,8 @@ export default async function HomePage() {
       entriesByUser[e.userId]!.push(e)
     }
 
-    const now = new Date()
+    const realNow = Date.now()
+    const now = campusNow()
     friendsData = friendProfiles.map((fp) => {
       const entries = entriesByUser[fp.id] ?? []
       const state = computeTimetableState(entries, now, fp.status_override ?? null)
@@ -130,7 +126,7 @@ export default async function HomePage() {
       let endsAt: number | null = null
       if (canSeeClass && state.currentClass) {
         currentClass = state.currentClass.subjectCode
-        if (state.timeRemainingSeconds != null) endsAt = now.getTime() + state.timeRemainingSeconds * 1000
+        if (state.timeRemainingSeconds != null) endsAt = realNow + state.timeRemainingSeconds * 1000
         if (state.currentClass.subjectName) {
           currentClass += ` — ${state.currentClass.subjectName}`
         }
@@ -145,7 +141,7 @@ export default async function HomePage() {
     friendsData.sort((a, b) => (ORDER[a.status] ?? 5) - (ORDER[b.status] ?? 5))
   }
 
-  let friendLocations: Record<string, string> = {}
+  const friendLocations: Record<string, string> = {}
   if (friendIds.length > 0) {
     const { data: locationRows } = await supabase
       .from('active_locations')

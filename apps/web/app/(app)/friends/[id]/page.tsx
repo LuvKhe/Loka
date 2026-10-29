@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import StatusBadge from '@/components/ui/StatusBadge'
 import Avatar from '@/components/ui/Avatar'
-import { computeTimetableState, formatTime } from '@loka/shared/timetable'
+import { computeTimetableState, formatTime, campusNow } from '@loka/shared/timetable'
 import TimetableView from '@/components/timetable/TimetableView'
 import type { TimetableEntry } from '@loka/shared/types'
 
@@ -32,71 +32,56 @@ export default async function FriendProfilePage({ params }: Props) {
 
   const friendId = params.id
   const [userA, userB] = [user.id, friendId].sort()
-  const { data: friendship } = await supabase
-    .from('friendships')
-    .select('id')
-    .eq('user_a', userA)
-    .eq('user_b', userB)
-    .maybeSingle()
 
-  if (!friendship) notFound()
+  const [friendshipRes, profileRes, privacyRes] = await Promise.all([
+    supabase.from('friendships').select('id').eq('user_a', userA).eq('user_b', userB).maybeSingle(),
+    supabase.from('profiles').select('*').eq('id', friendId).maybeSingle(),
+    supabase
+      .from('privacy_settings')
+      .select('share_location, share_current_class, share_next_class')
+      .eq('user_id', friendId)
+      .maybeSingle(),
+  ])
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', friendId)
-    .maybeSingle()
-
+  if (!friendshipRes.data) notFound()
+  const profile = profileRes.data
   if (!profile) notFound()
-
-  const { data: privacy } = await supabase
-    .from('privacy_settings')
-    .select('share_location, share_current_class, share_next_class')
-    .eq('user_id', friendId)
-    .maybeSingle()
+  const privacy = privacyRes.data
 
   const shareLocation = privacy?.share_location === true
   const shareClass = privacy?.share_current_class === true
   const shareNext = privacy?.share_next_class === true
 
-  let friendLocation: string | null = null
-  if (shareLocation) {
-    const { data: locationRow } = await supabase
-      .from('active_locations')
-      .select('place_label')
-      .eq('user_id', friendId)
-      .maybeSingle()
-    friendLocation = locationRow?.place_label ?? null
-  }
+  const [locationRes, rowsRes] = await Promise.all([
+    shareLocation
+      ? supabase.from('active_locations').select('place_label').eq('user_id', friendId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    shareClass || shareNext
+      ? supabase.from('timetable_entries').select('*').eq('user_id', friendId).eq('is_active', true)
+      : Promise.resolve({ data: null }),
+  ])
 
-  let entries: TimetableEntry[] = []
-  if (shareClass || shareNext) {
-    const { data: rows } = await supabase
-      .from('timetable_entries')
-      .select('*')
-      .eq('user_id', friendId)
-      .eq('is_active', true)
+  const friendLocation: string | null = locationRes.data?.place_label ?? null
 
-    entries = (rows ?? []).map((e) => ({
-      id: e.id,
-      userId: e.user_id,
-      dayOfWeek: e.day_of_week,
-      startTime: e.start_time,
-      endTime: e.end_time,
-      subjectCode: e.subject_code,
-      subjectName: e.subject_name,
-      groupName: e.group_name,
-      venue: e.venue,
-      room: e.room,
-      lecturer: e.lecturer,
-      notes: e.notes,
-      isActive: e.is_active,
-      createdAt: e.created_at,
-      updatedAt: e.updated_at,
-    }))
-  }
+  const entries: TimetableEntry[] = (rowsRes.data ?? []).map((e) => ({
+    id: e.id,
+    userId: e.user_id,
+    dayOfWeek: e.day_of_week,
+    startTime: e.start_time,
+    endTime: e.end_time,
+    subjectCode: e.subject_code,
+    subjectName: e.subject_name,
+    groupName: e.group_name,
+    venue: e.venue,
+    room: e.room,
+    lecturer: e.lecturer,
+    notes: e.notes,
+    isActive: e.is_active,
+    createdAt: e.created_at,
+    updatedAt: e.updated_at,
+  }))
 
-  const state = computeTimetableState(entries, new Date(), profile.status_override ?? null)
+  const state = computeTimetableState(entries, campusNow(), profile.status_override ?? null)
   const status = shareClass || shareNext ? state.status : 'unknown'
   const nextClass = shareNext && state.nextClass ? describe(state.nextClass) : null
 

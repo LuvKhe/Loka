@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import PersistStorage from '@/components/ui/PersistStorage'
+import ThemeSync from '@/components/ui/ThemeSync'
 
 export const metadata: Metadata = {
   title: 'Loka',
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Loka',
   },
 }
@@ -26,9 +27,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  colorScheme: 'light dark',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#2563EB' },
-    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
   ],
 }
 
@@ -43,12 +45,13 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('loka-theme');var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})()",
+              "(function(){try{var t=localStorage.getItem('loka-theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t==='dark'||((t==null||t==='system')&&m);var h=document.documentElement;h.classList.toggle('dark',d);h.style.colorScheme=d?'dark':'light'}catch(e){}})()",
           }}
         />
       </head>
-      <body className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <body className="min-h-screen bg-gray-50 dark:bg-black">
         <PersistStorage />
+        <ThemeSync />
         {children}
       </body>
     </html>

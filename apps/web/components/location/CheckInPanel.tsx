@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { validateCustomPlace } from '@loka/shared/validation'
 
 interface Building {
   id: string
@@ -17,6 +18,7 @@ interface ActiveLocation {
 
 interface Props {
   activeLocation: ActiveLocation | null
+  currentClass?: { key: string; venue: string } | null
 }
 
 type PanelState =
@@ -66,10 +68,13 @@ function groupBuildings(buildings: Building[]): { label: string; items: Building
     .map(([label, items]) => ({ label, items }))
 }
 
-export default function CheckInPanel({ activeLocation }: Props) {
+export default function CheckInPanel({ activeLocation, currentClass = null }: Props) {
   const router = useRouter()
   const [panel, setPanel] = useState<PanelState>({ kind: 'idle' })
   const [leavingCampus, setLeavingCampus] = useState(false)
+  const [custom, setCustom] = useState('')
+  const [customError, setCustomError] = useState<string | null>(null)
+  const [auto, setAuto] = useState(false)
 
   async function openPicker() {
     setPanel({ kind: 'loading_buildings' })
@@ -83,15 +88,52 @@ export default function CheckInPanel({ activeLocation }: Props) {
     }
   }
 
+  function markManual() {
+    if (!currentClass) return
+    try {
+      localStorage.setItem('loka-auto-last', currentClass.key)
+    } catch {}
+  }
+
+  async function post(body: Record<string, string>): Promise<string | null> {
+    const res = await fetch('/api/location/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      return typeof data.error === 'string' ? data.error : 'Failed to update location'
+    }
+    return null
+  }
+
   async function checkIn(building: Building) {
     setPanel({ kind: 'checking_in' })
+    markManual()
     try {
-      const res = await fetch('/api/location/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campusBuildingId: building.id, placeLabel: building.label }),
-      })
-      if (!res.ok) throw new Error('Failed to check in')
+      const err = await post({ campusBuildingId: building.id })
+      if (err) throw new Error(err)
+      router.refresh()
+      setPanel({ kind: 'idle' })
+    } catch (err) {
+      setPanel({ kind: 'error', message: err instanceof Error ? err.message : 'Could not check in' })
+    }
+  }
+
+  async function checkInCustom() {
+    const check = validateCustomPlace(custom)
+    if (!check.ok) {
+      setCustomError(check.error)
+      return
+    }
+    setCustomError(null)
+    setPanel({ kind: 'checking_in' })
+    markManual()
+    try {
+      const err = await post({ customLabel: custom.trim() })
+      if (err) throw new Error(err)
+      setCustom('')
       router.refresh()
       setPanel({ kind: 'idle' })
     } catch (err) {
@@ -101,6 +143,7 @@ export default function CheckInPanel({ activeLocation }: Props) {
 
   async function leaveCampus() {
     setLeavingCampus(true)
+    markManual()
     try {
       await fetch('/api/location/checkin', { method: 'DELETE' })
       router.refresh()
@@ -109,23 +152,83 @@ export default function CheckInPanel({ activeLocation }: Props) {
     }
   }
 
+  function toggleAuto(on: boolean) {
+    setAuto(on)
+    try {
+      localStorage.setItem('loka-auto-venue', on ? '1' : '0')
+      if (on) localStorage.removeItem('loka-auto-last')
+    } catch {}
+  }
+
+  useEffect(() => {
+    try {
+      setAuto(localStorage.getItem('loka-auto-venue') === '1')
+    } catch {}
+  }, [])
+
+  const classKey = currentClass?.key ?? null
+  const classVenue = currentClass?.venue ?? null
+  const currentLabel = activeLocation?.placeLabel ?? null
+
+  useEffect(() => {
+    if (!auto || !classKey || !classVenue) return
+    try {
+      if (localStorage.getItem('loka-auto-last') === classKey) return
+      localStorage.setItem('loka-auto-last', classKey)
+    } catch {
+      return
+    }
+    if (currentLabel === classVenue) return
+    post({ customLabel: classVenue }).then((err) => {
+      if (!err) router.refresh()
+    })
+  }, [auto, classKey, classVenue])
+
+  const busy = panel.kind === 'picking' || panel.kind === 'loading_buildings' || panel.kind === 'checking_in'
+
+  const autoToggle = (
+    <label className="flex items-start gap-3 min-h-[2.75rem] pt-3 mt-3 border-t border-gray-100 dark:border-slate-700 text-sm text-gray-700 dark:text-gray-200">
+      <input
+        type="checkbox"
+        className="w-5 h-5 mt-0.5 shrink-0"
+        checked={auto}
+        onChange={(e) => toggleAuto(e.target.checked)}
+      />
+      <span>
+        Set my location to my class venue when a class starts
+        <span className="block text-xs text-gray-600 dark:text-gray-400">
+          Friends who can see your location will see it. You can change it any time.
+        </span>
+      </span>
+    </label>
+  )
+
   // If checked in — show current location + leave button
-  if (activeLocation) {
+  if (activeLocation && !busy) {
     return (
       <div className="loka-card">
+        {panel.kind === 'error' && (
+          <p role="alert" className="text-xs text-red-700 dark:text-red-400 mb-2">{panel.message}</p>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs text-gray-500 mb-0.5">On campus</p>
-            <p className="text-sm font-medium text-gray-900 truncate">{activeLocation.placeLabel}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">On campus</p>
+            <p className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">{activeLocation.placeLabel}</p>
           </div>
-          <button
-            onClick={leaveCampus}
-            disabled={leavingCampus}
-            className="loka-btn-secondary py-1.5 px-3 text-xs shrink-0 disabled:opacity-40"
-          >
-            {leavingCampus ? '...' : 'Leave campus'}
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button onClick={openPicker} className="loka-btn-primary py-2 px-3 text-sm min-h-[2.75rem]">
+              Change
+            </button>
+            <button
+              onClick={leaveCampus}
+              disabled={leavingCampus}
+              className="loka-btn-secondary py-2 px-3 text-sm min-h-[2.75rem] disabled:opacity-40"
+            >
+              {leavingCampus ? '...' : 'Leave'}
+            </button>
+          </div>
         </div>
+        {autoToggle}
       </div>
     )
   }
@@ -139,10 +242,11 @@ export default function CheckInPanel({ activeLocation }: Props) {
         )}
         <button
           onClick={openPicker}
-          className="loka-btn-primary w-full py-2.5 text-sm"
+          className="loka-btn-primary w-full py-2.5 text-sm min-h-[2.75rem]"
         >
           Check in to campus
         </button>
+        {autoToggle}
       </div>
     )
   }
@@ -211,9 +315,37 @@ export default function CheckInPanel({ activeLocation }: Props) {
           }
           aria-label="Search rooms"
           placeholder="Search rooms..."
-          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:border-blue-300 focus:bg-white transition-colors"
-          autoFocus
+          className="loka-input min-h-[2.75rem]"
         />
+
+        <div className="rounded-xl bg-gray-50 dark:bg-slate-900 p-3 space-y-2">
+          <label htmlFor="custom-place" className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+            Somewhere else
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="custom-place"
+              type="text"
+              value={custom}
+              maxLength={40}
+              onChange={(e) => {
+                setCustom(e.target.value)
+                setCustomError(null)
+              }}
+              placeholder="e.g. Library steps, Cafeteria"
+              className="loka-input flex-1 min-h-[2.75rem]"
+            />
+            <button
+              type="button"
+              onClick={checkInCustom}
+              disabled={custom.trim().length < 2}
+              className="loka-btn-primary px-4 min-h-[2.75rem] disabled:opacity-40"
+            >
+              Set
+            </button>
+          </div>
+          {customError && <p role="alert" className="text-xs text-red-700 dark:text-red-400">{customError}</p>}
+        </div>
 
         {/* List */}
         <div className="max-h-64 overflow-y-auto -mx-1 px-1 space-y-3">
