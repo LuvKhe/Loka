@@ -38,12 +38,12 @@ export default function FriendRequestActions({ requestId }: Props) {
   }
 
   return (
-    <div className="flex gap-2 shrink-0">
+    <div className="grid grid-cols-2 gap-2">
       <button
         type="button"
         onClick={() => handle('accept')}
         disabled={accepting || declining}
-        className="loka-btn-primary py-1.5 px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+        className="loka-btn-primary min-h-[2.75rem] text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {accepting ? '...' : 'Accept'}
       </button>
@@ -51,7 +51,7 @@ export default function FriendRequestActions({ requestId }: Props) {
         type="button"
         onClick={() => handle('decline')}
         disabled={accepting || declining}
-        className="loka-btn-secondary py-1.5 px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+        className="loka-btn-secondary min-h-[2.75rem] text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {declining ? '...' : 'Decline'}
       </button>

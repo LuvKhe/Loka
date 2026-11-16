@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { validateLokaId } from '@loka/shared/validation'
 import { useToast } from '@/components/ui/Toast'
+import Avatar from '@/components/ui/Avatar'
 
 type SearchState =
   | { kind: 'idle' }
@@ -23,7 +24,6 @@ export default function AddFriendClient() {
   const [state, setState] = useState<SearchState>({ kind: 'idle' })
 
   function handleChange(value: string) {
-    // Auto-insert hyphen after 4 characters
     let formatted = value.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789-]/g, '')
     if (formatted.length === 4 && !formatted.includes('-')) {
       formatted = formatted + '-'
@@ -84,99 +84,91 @@ export default function AddFriendClient() {
     }
   }
 
+  const message = (text: string, tone: 'neutral' | 'error' = 'neutral') => (
+    <div role={tone === 'error' ? 'alert' : undefined} className="loka-card">
+      <p className={['text-sm', tone === 'error' ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-200'].join(' ')}>
+        {text}
+      </p>
+    </div>
+  )
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5">
       <div className="flex items-center gap-3 pt-2">
-        <button onClick={() => router.back()} className="text-sm text-gray-500 p-1 -ml-1">
+        <button onClick={() => router.back()} className="text-sm font-medium text-gray-700 dark:text-gray-200 min-h-[2.75rem] px-1 -ml-1">
           Back
         </button>
-        <h1 className="text-xl font-bold text-gray-900">Add Friend</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Add friend</h1>
       </div>
 
-      <p className="text-sm text-gray-500">
-        Enter a Loka ID to find and add a friend. IDs look like <span className="font-mono">ABCD-1234</span>.
+      <p className="text-sm text-gray-600 dark:text-gray-400" style={{ textWrap: 'balance' }}>
+        Type your friend&apos;s Loka ID. It looks like <span className="font-mono">ABCD-1234</span>.
       </p>
 
       <form onSubmit={handleSearch} className="space-y-3">
         <div>
+          <label htmlFor="friend-id" className="sr-only">Friend Loka ID</label>
           <input
+            id="friend-id"
             type="text"
             value={lokaId}
             onChange={(e) => handleChange(e.target.value)}
-            aria-label="Friend Loka ID"
             placeholder="XXXX-XXXX"
-            className={['loka-input w-full font-mono text-center text-lg tracking-widest', idError ? 'border-red-400' : ''].join(' ')}
+            className={['loka-input w-full min-h-[3.5rem] font-mono text-center text-2xl tracking-widest', idError ? 'border-red-500' : ''].join(' ')}
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
+            inputMode="text"
+            aria-invalid={idError ? true : undefined}
+            aria-describedby={idError ? 'friend-id-error' : undefined}
           />
-          {idError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{idError}</p>}
+          {idError && <p id="friend-id-error" role="alert" className="text-sm text-red-700 dark:text-red-400 mt-1.5">{idError}</p>}
         </div>
         <button
           type="submit"
           disabled={state.kind === 'searching' || lokaId.length < 9}
-          className="loka-btn-primary w-full py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="loka-btn-primary w-full min-h-[3rem] text-base disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {state.kind === 'searching' ? 'Searching...' : 'Search'}
+          {state.kind === 'searching' ? 'Searching...' : 'Find friend'}
         </button>
       </form>
 
       {state.kind === 'found' && (
-        <div className="loka-card space-y-3">
+        <div className="loka-card space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-              <span className="text-blue-600 font-bold text-lg">
-                {(state.profile.displayName ?? '?')[0]?.toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{state.profile.displayName}</p>
-              <p className="text-xs font-mono text-gray-500">{state.profile.lokaId}</p>
+            <Avatar url={null} name={state.profile.displayName} size={56} />
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{state.profile.displayName}</p>
+              <p className="text-xs font-mono text-gray-600 dark:text-gray-400">{state.profile.lokaId}</p>
             </div>
           </div>
-          <button
-            onClick={handleSendRequest}
-            className="loka-btn-primary w-full py-2.5 text-sm"
-          >
+          <button onClick={handleSendRequest} className="loka-btn-primary w-full min-h-[3rem] text-base">
             Send friend request
           </button>
         </div>
       )}
 
-      {state.kind === 'not_found' && (
-        <div className="loka-card">
-          <p className="text-sm text-gray-500">No user found with that Loka ID.</p>
-        </div>
-      )}
-
-      {state.kind === 'already_friends' && (
-        <div className="loka-card">
-          <p className="text-sm text-gray-500">You are already friends with this person.</p>
-        </div>
-      )}
-
-      {state.kind === 'request_pending' && (
-        <div className="loka-card">
-          <p className="text-sm text-gray-500">
-            {state.direction === 'outgoing'
-              ? 'You already sent this person a friend request.'
-              : 'This person has sent you a friend request. Check your Friends page to accept it.'}
-          </p>
-        </div>
-      )}
+      {state.kind === 'not_found' && message('No one found with that Loka ID. Check it and try again.')}
+      {state.kind === 'already_friends' && message('You are already friends with this person.')}
+      {state.kind === 'request_pending' &&
+        message(
+          state.direction === 'outgoing'
+            ? 'You already sent this person a friend request.'
+            : 'This person has sent you a friend request. Open Friends to accept it.',
+        )}
 
       {state.kind === 'sent' && (
-        <div className="loka-card">
-          <p className="text-sm text-gray-900 font-medium">Friend request sent</p>
-          <p className="text-xs text-gray-500 mt-0.5">They will see it when they open the app.</p>
+        <div className="loka-card text-center py-8">
+          <svg viewBox="0 0 64 64" className="w-16 h-16 mx-auto mb-3" aria-hidden="true">
+            <circle cx="32" cy="32" r="30" className="fill-emerald-100 dark:fill-emerald-900/40" />
+            <path d="M18 33 l9 9 l19 -20" fill="none" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" className="stroke-emerald-700 dark:stroke-emerald-400 loka-draw" />
+          </svg>
+          <p className="font-bold text-gray-900 dark:text-gray-100">Request sent</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">They will see it when they open Loka.</p>
         </div>
       )}
 
-      {state.kind === 'error' && (
-        <div className="loka-card border-red-100 bg-red-50">
-          <p className="text-sm text-red-600">{state.message}</p>
-        </div>
-      )}
+      {state.kind === 'error' && message(state.message, 'error')}
     </div>
   )
 }
