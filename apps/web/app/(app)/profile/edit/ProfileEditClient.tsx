@@ -84,15 +84,15 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center gap-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="loka-card flex items-center gap-4">
         <Avatar url={avatar} name={name} size={80} />
         <div className="space-y-2">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
-              className="loka-btn-secondary py-2 px-4 text-xs"
+              className="loka-btn-secondary min-h-[2.75rem] px-4 text-sm"
             >
               {avatar ? 'Change photo' : 'Add photo'}
             </button>
@@ -100,13 +100,13 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
               <button
                 type="button"
                 onClick={() => setAvatar(null)}
-                className="loka-btn-secondary py-2 px-4 text-xs"
+                className="loka-btn-secondary min-h-[2.75rem] px-4 text-sm"
               >
                 Remove
               </button>
             )}
           </div>
-          {avatarError && <p className="text-xs text-red-600 dark:text-red-400">{avatarError}</p>}
+          {avatarError && <p className="text-sm text-red-700 dark:text-red-400">{avatarError}</p>}
           <input
             ref={fileInput}
             type="file"
@@ -118,19 +118,19 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
       </div>
 
       <div>
-        <label htmlFor="field-display-name" className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Display name</label>
+        <label htmlFor="field-display-name" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1.5">Display name</label>
         <input id="field-display-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={50}
-          className={['loka-input w-full', error ? 'border-red-400' : ''].join(' ')}
+          className={['loka-input w-full min-h-[3rem]', error ? 'border-red-400' : ''].join(' ')}
         />
-        {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
+        {error && <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>}
       </div>
 
       <div>
-        <label htmlFor="field-bio" className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Bio</label>
+        <label htmlFor="field-bio" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1.5">Bio</label>
         <textarea id="field-bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
@@ -140,25 +140,25 @@ export default function ProfileEditClient({ displayName: initialName, bio: initi
           className={['loka-input w-full resize-none', bioError ? 'border-red-400' : ''].join(' ')}
         />
         <div className="flex justify-between mt-1">
-          <span className="text-xs text-red-600 dark:text-red-400">{bioError}</span>
-          <span className="text-xs text-gray-500 dark:text-slate-400">{bio.length}/{BIO_MAX}</span>
+          <span className="text-sm text-red-700 dark:text-red-400">{bioError}</span>
+          <span className="text-xs text-gray-600 dark:text-slate-400 tabular-nums">{bio.length}/{BIO_MAX}</span>
         </div>
       </div>
 
-      {serverError && <p className="text-xs text-red-600 dark:text-red-400">{serverError}</p>}
+      {serverError && <p className="text-sm text-red-700 dark:text-red-400">{serverError}</p>}
 
       <div className="flex gap-2 pt-2">
         <button
           type="button"
           onClick={() => router.back()}
-          className="loka-btn-secondary flex-1 py-3"
+          className="loka-btn-secondary flex-1 min-h-[3rem]"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={saving || !changed}
-          className="loka-btn-primary flex-1 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="loka-btn-primary flex-1 min-h-[3rem] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>

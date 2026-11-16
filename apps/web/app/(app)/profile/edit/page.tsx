@@ -13,9 +13,9 @@ export default async function ProfileEditPage() {
     .single()
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5">
       <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Edit Profile</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-slate-100">Edit profile</h1>
       </div>
       <ProfileEditClient
         userId={user.id}

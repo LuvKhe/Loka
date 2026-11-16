@@ -21,7 +21,7 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
   if (!profile) {
     return (
       <div className="p-4">
-        <p className="text-gray-500 text-sm">Loading profile...</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">Loading profile...</p>
       </div>
     )
   }
@@ -34,98 +34,92 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
       <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Profile</h1>
       </div>
 
-      {/* Identity card */}
-      <div className="loka-card">
-        <div className="flex items-center gap-4 mb-4">
-          <Avatar url={profile.avatarUrl} name={profile.displayName} size={56} />
-          <div>
-            <p className="font-bold text-gray-900">{profile.displayName}</p>
-            <p className="text-sm text-gray-500">{profile.university}</p>
-            {profile.bio && <p className="text-sm text-gray-600 mt-1">{profile.bio}</p>}
+      <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+        <div className="h-20 bg-gradient-to-r from-blue-700 to-violet-800" aria-hidden="true" />
+        <div className="px-4 pb-4 -mt-10">
+          <div className="inline-block rounded-full p-1 bg-white dark:bg-slate-800">
+            <Avatar url={profile.avatarUrl} name={profile.displayName} size={72} />
           </div>
-        </div>
+          <p className="text-xl font-extrabold text-gray-900 dark:text-gray-100 break-words mt-2" style={{ textWrap: 'balance' }}>
+            {profile.displayName}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{profile.university}</p>
+          {profile.bio && <p className="text-sm text-gray-800 dark:text-gray-200 mt-3 break-words">{profile.bio}</p>}
 
-        {/* Loka ID */}
-        <div className="bg-gray-50 rounded-lg p-3 mb-3">
-          <p className="text-xs text-gray-500 mb-1">Loka ID</p>
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-mono font-bold text-gray-900 text-xl">
-              {profile.lokaId || '—'}
-            </p>
-            <button
-              onClick={copyLokaId}
-              className="loka-btn-secondary py-1.5 px-3 text-xs shrink-0"
-            >
+          <div className="mt-4 rounded-xl bg-gray-50 dark:bg-slate-900 p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-600 dark:text-gray-400">Loka ID</p>
+              <p className="font-mono font-bold text-xl tracking-wider text-gray-900 dark:text-gray-100">
+                {profile.lokaId || '-'}
+              </p>
+            </div>
+            <button onClick={copyLokaId} className="loka-btn-secondary min-h-[2.75rem] px-4 text-sm shrink-0">
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-        </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="loka-btn-secondary flex-1 py-2 text-xs"
-          >
-            {showQR ? 'Hide QR' : 'Show QR'}
-          </button>
-          <a href="/profile/edit" className="loka-btn-secondary flex-1 py-2 text-xs text-center">
-            Edit Profile
-          </a>
-        </div>
-
-        {showQR && (
-          <div className="mt-4 flex justify-center">
-            <QRCodeDisplay value={profile.lokaId} />
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <button
+              onClick={() => setShowQR(!showQR)}
+              aria-expanded={showQR}
+              className="loka-btn-secondary min-h-[2.75rem] text-sm"
+            >
+              {showQR ? 'Hide QR code' : 'Show QR code'}
+            </button>
+            <a href="/profile/edit" className="loka-btn-primary min-h-[2.75rem] text-sm text-center inline-flex items-center justify-center">
+              Edit profile
+            </a>
           </div>
-        )}
+
+          {showQR && (
+            <div className="mt-4 flex justify-center rounded-xl bg-white p-4">
+              <QRCodeDisplay value={profile.lokaId} />
+            </div>
+          )}
+        </div>
       </div>
 
       <section>
-        <p className="loka-section-label">Keep your profile safe</p>
-        <KeepSafeCard />
-      </section>
-
-      <section>
-        <p className="loka-section-label">Appearance</p>
-        <ThemeToggle />
-      </section>
-
-      {/* Privacy settings */}
-      <section>
-        <p className="loka-section-label">Privacy</p>
+        <h2 className="loka-section-label">Privacy</h2>
         <PrivacySettingsPanel settings={privacySettings} />
       </section>
 
-      {/* Recovery */}
       <section>
-        <p className="loka-section-label">Recovery</p>
-        <div className="loka-card">
-          <p className="text-sm font-medium text-gray-900 mb-1">Recovery Code</p>
-          <p className="text-xs text-gray-500 mb-3">
-            If you lose this device, your recovery code lets you restore your Loka profile.
-            Keep it somewhere safe — Loka cannot recover it for you.
-          </p>
-          <a href="/profile/recovery" className="loka-btn-secondary py-2 text-xs inline-block">
-            View Recovery Code
-          </a>
+        <h2 className="loka-section-label">Appearance</h2>
+        <ThemeToggle />
+      </section>
+
+      <section>
+        <h2 className="loka-section-label">Keep your profile safe</h2>
+        <div className="space-y-3">
+          <KeepSafeCard />
+          <div className="loka-card">
+            <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Recovery code</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              If you lose this device, your Loka ID and recovery code bring your profile back. Create a new code any time.
+            </p>
+            <a href="/profile/recovery" className="loka-btn-secondary min-h-[2.75rem] text-sm inline-flex items-center">
+              Manage recovery code
+            </a>
+          </div>
         </div>
       </section>
 
       <section>
-        <p className="loka-section-label">Legal</p>
-        <div className="loka-card flex gap-4 text-sm">
-          <a href="/terms" className="text-blue-600 dark:text-blue-400 underline">Terms of Use</a>
-          <a href="/privacy" className="text-blue-600 dark:text-blue-400 underline">Privacy Policy</a>
+        <h2 className="loka-section-label">Legal</h2>
+        <div className="loka-card flex gap-6 text-sm">
+          <a href="/terms" className="text-blue-700 dark:text-blue-400 underline min-h-[2.75rem] inline-flex items-center">Terms of Use</a>
+          <a href="/privacy" className="text-blue-700 dark:text-blue-400 underline min-h-[2.75rem] inline-flex items-center">Privacy Policy</a>
         </div>
       </section>
 
       <section>
-        <p className="loka-section-label">Delete profile</p>
+        <h2 className="loka-section-label">Delete profile</h2>
         <DeleteAccountPanel />
       </section>
     </div>
