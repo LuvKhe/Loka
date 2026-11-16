@@ -5,6 +5,7 @@ import { computeTimetableState, formatTime, formatDuration, campusNow } from '@l
 import type { TimetableEntry, TimetableState, Profile, PrivacySettings } from '@loka/shared/types'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { STATUS_LABELS } from '@loka/shared/constants'
+import { subjectColor } from '@/lib/subject-color'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
@@ -43,7 +44,6 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
   const [settingOverride, setSettingOverride] = useState(false)
   const [avatars, setAvatars] = useState<Record<string, string | null>>({})
 
-  // Recompute status every 30 seconds
   useEffect(() => {
     const compute = () => {
       const current = campusNow()
@@ -116,113 +116,132 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
   if (!profile) {
     return (
       <div className="p-4">
-        <p className="text-gray-500 text-sm">Loading...</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
       </div>
     )
   }
 
   const isManual = profile.statusOverride === 'free'
+  const firstName = profile.displayName.split(' ')[0] ?? profile.displayName
+  const hour = now.getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+
+  const counts = { free: 0, in_class: 0, between_classes: 0 }
+  for (const f of friendsData) {
+    if (f.status === 'free') counts.free++
+    else if (f.status === 'in_class') counts.in_class++
+    else if (f.status === 'between_classes') counts.between_classes++
+  }
+
+  let heroGradient = 'from-slate-700 to-slate-900'
+  let heroLabel = ''
+  let heroTitle = ''
+  let heroSub = ''
+  let heroChips: string[] = []
+  let heroPct: number | null = null
+
+  if (state) {
+    if (isManual) {
+      heroLabel = 'You are'
+      heroTitle = 'Free'
+      heroSub = 'Set manually. Friends see you as free.'
+      heroGradient = 'from-emerald-700 to-emerald-900'
+    } else if (state.currentClass) {
+      const c = state.currentClass
+      heroGradient = subjectColor(c.subjectCode).hero
+      heroLabel = 'In class now'
+      heroTitle = c.subjectCode
+      heroSub = state.timeRemainingSeconds != null ? `Ends in ${formatDuration(state.timeRemainingSeconds)}` : ''
+      heroChips = [`${formatTime(c.startTime)} to ${formatTime(c.endTime)}`, ...(c.venue ? [c.venue] : []), ...(c.groupName ? [`Group ${c.groupName}`] : [])]
+      const s0 = toMin(c.startTime)
+      const e0 = toMin(c.endTime)
+      heroPct = e0 > s0 ? Math.max(0, Math.min(100, Math.round(((nowMin - s0) / (e0 - s0)) * 100))) : null
+    } else if (state.nextClass) {
+      const n = state.nextClass
+      heroGradient = subjectColor(n.subjectCode).hero
+      heroLabel = state.status === 'between_classes' ? 'Between classes. Up next' : 'Up next'
+      heroTitle = n.subjectCode
+      heroSub =
+        state.timeUntilNextSeconds != null
+          ? state.timeUntilNextSeconds >= 24 * 60 * 60
+            ? `${DAY_NAMES[n.dayOfWeek]} at ${formatTime(n.startTime)}`
+            : `Starts in ${formatDuration(state.timeUntilNextSeconds)}`
+          : ''
+      heroChips = [`${formatTime(n.startTime)} to ${formatTime(n.endTime)}`, ...(n.venue ? [n.venue] : []), ...(n.groupName ? [`Group ${n.groupName}`] : [])]
+    } else {
+      heroLabel = 'You are'
+      heroTitle = 'Free'
+      heroSub = STATUS_LABELS[state.status] ?? 'No classes scheduled'
+      heroGradient = 'from-emerald-700 to-emerald-900'
+    }
+  }
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Header */}
-      <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Loka</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
-      </div>
+    <div className="p-4 space-y-6">
+      <header className="flex items-center justify-between gap-3 pt-2">
+        <div className="min-w-0">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 truncate" style={{ textWrap: 'balance' }}>
+            {greeting}, {firstName}
+          </h1>
+        </div>
+        <Link href="/profile" aria-label="Your profile" className="shrink-0 rounded-full">
+          <Avatar url={profile.avatarUrl ?? null} name={profile.displayName} size={44} />
+        </Link>
+      </header>
 
       <InstallBanner />
 
-      {/* Your status card */}
-      <section>
-        <p className="loka-section-label">You</p>
-        <div className="loka-card">
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">{profile.displayName}</p>
-              {state && <StatusBadge status={isManual ? 'free' : state.status} />}
-            </div>
-            {isManual && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 shrink-0">
-                Manual
-              </span>
+      <section aria-label="Your status">
+        {state === null ? (
+          <div className="h-44 rounded-2xl bg-gray-200 dark:bg-slate-800 animate-pulse" aria-hidden="true" />
+        ) : (
+          <div className={['rounded-2xl bg-gradient-to-br text-white p-5 shadow-lg', heroGradient].join(' ')}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white">{heroLabel}</p>
+            <p className="text-4xl font-extrabold mt-1" style={{ textWrap: 'balance' }}>{heroTitle}</p>
+            {heroSub && <p className="text-base font-medium mt-0.5 tabular-nums">{heroSub}</p>}
+            {heroChips.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {heroChips.map((c) => (
+                  <span key={c} className="text-xs rounded-full px-2.5 py-1 bg-black/25 tabular-nums">{c}</span>
+                ))}
+              </div>
             )}
-          </div>
-
-          {!isManual && state?.currentClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {state.currentClass.subjectCode}
-                {state.currentClass.subjectName && (
-                  <span className="font-normal text-gray-500 dark:text-gray-400"> — {state.currentClass.subjectName}</span>
-                )}
-              </p>
-              {state.currentClass.venue && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{state.currentClass.venue}</p>
-              )}
-              {state.timeRemainingSeconds != null && (
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                  Ends {formatTime(state.currentClass.endTime)}
-                  {' '}· {formatDuration(state.timeRemainingSeconds)} remaining
-                </p>
-              )}
-            </div>
-          )}
-
-          {!isManual && state?.nextClass && !state?.currentClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <p className="text-xs text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Next</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{state.nextClass.subjectCode}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {formatTime(state.nextClass.startTime)}
-                {state.nextClass.venue && ` · ${state.nextClass.venue}`}
-              </p>
-              {state.timeUntilNextSeconds != null && (
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                  {state.timeUntilNextSeconds >= 24 * 60 * 60
-                    ? DAY_NAMES[state.nextClass.dayOfWeek]
-                    : `In ${formatDuration(state.timeUntilNextSeconds)}`}
-                </p>
-              )}
-            </div>
-          )}
-
-          {!isManual && state && !state.currentClass && !state.nextClass && (
-            <div className="mt-1 pt-3 border-t border-gray-100 dark:border-slate-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {STATUS_LABELS[state.status] ?? 'No classes scheduled'}
-              </p>
-            </div>
-          )}
-
-          {/* Override controls */}
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-            {isManual ? (
-              <button
-                onClick={clearOverride}
-                disabled={settingOverride}
-                className="loka-btn-secondary py-1.5 px-3 text-xs disabled:opacity-40"
-              >
-                {settingOverride ? '...' : 'Back to automatic'}
-              </button>
-            ) : (
-              <button
-                onClick={setFree}
-                disabled={settingOverride}
-                className="loka-btn-secondary py-1.5 px-3 text-xs disabled:opacity-40"
-              >
-                {settingOverride ? '...' : 'Set myself as free'}
-              </button>
+            {heroPct !== null && (
+              <div className="mt-4">
+                <div
+                  role="progressbar"
+                  aria-label="Class progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={heroPct}
+                  className="h-2 rounded-full bg-black/30 overflow-hidden"
+                >
+                  <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${heroPct}%` }} />
+                </div>
+                <p className="text-xs mt-1.5 tabular-nums">{heroPct}% done</p>
+              </div>
             )}
+            <div className="mt-4">
+              <button
+                onClick={isManual ? clearOverride : setFree}
+                disabled={settingOverride}
+                className="min-h-[2.75rem] px-4 rounded-full text-sm font-semibold bg-black/30 text-white active:scale-95 transition-transform duration-150 disabled:opacity-50"
+              >
+                {settingOverride ? '...' : isManual ? 'Back to automatic' : 'Set myself as free'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
-      {/* Campus check-in */}
       <section>
-        <p className="loka-section-label">Location</p>
+        <h2 className="loka-section-label">Location</h2>
         <CheckInPanel
           activeLocation={activeLocation}
           currentClass={
@@ -233,53 +252,88 @@ export default function HomeClient({ profile, timetableEntries, friendsData, act
         />
       </section>
 
-      {/* Friends */}
       <section>
-        <div className="flex items-center justify-between">
-          <p className="loka-section-label">Friends</p>
-          <Link href="/friends" className="text-xs text-blue-700 dark:text-blue-400 pb-1">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="loka-section-label mb-0">Friends</h2>
+          <Link href="/friends" className="text-sm font-semibold text-blue-700 dark:text-blue-400 min-h-[2.75rem] inline-flex items-center">
             See all
           </Link>
         </div>
 
         {friendsData.length === 0 ? (
-          <div className="loka-card">
-            <p className="text-sm text-gray-500 mb-2">No friends yet.</p>
-            <Link href="/friends/add" className="loka-btn-primary py-2 px-3 text-xs inline-block">
+          <div className="loka-card text-center py-8">
+            <p className="font-bold text-gray-900 dark:text-gray-100">Nobody here yet</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4" style={{ textWrap: 'balance' }}>
+              Add a friend with their Loka ID to see when they are free.
+            </p>
+            <Link href="/friends/add" className="loka-btn-primary min-h-[2.75rem] inline-flex items-center">
               Add a friend
             </Link>
           </div>
         ) : (
-          <div className="loka-list">
-            {friendsData.map((friend) => (
-              <Link
-                key={friend.id}
-                href={`/friends/${friend.id}`}
-                className="loka-card flex items-center gap-3 hover:bg-gray-50 transition-colors"
-              >
-                <Avatar url={avatars[friend.id]} name={friend.displayName} size={40} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{friend.displayName}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <StatusBadge status={friend.status} />
-                    {friend.currentClass && (
-                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{friend.currentClass}</p>
+          <>
+            <div className="flex flex-wrap gap-2 mb-3 tabular-nums">
+              {counts.free > 0 && (
+                <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
+                  {counts.free} free
+                </span>
+              )}
+              {counts.in_class > 0 && (
+                <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200">
+                  {counts.in_class} in class
+                </span>
+              )}
+              {counts.between_classes > 0 && (
+                <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+                  {counts.between_classes} between classes
+                </span>
+              )}
+            </div>
+            <div className="loka-list">
+              {friendsData.map((friend) => {
+                const code = friend.currentClass ? friend.currentClass.split(' — ')[0]! : null
+                const ring =
+                  friend.status === 'in_class'
+                    ? 'ring-blue-600 dark:ring-blue-400'
+                    : friend.status === 'free'
+                      ? 'ring-emerald-600 dark:ring-emerald-400'
+                      : friend.status === 'between_classes'
+                        ? 'ring-amber-600 dark:ring-amber-400'
+                        : 'ring-gray-300 dark:ring-slate-600'
+                return (
+                  <Link
+                    key={friend.id}
+                    href={`/friends/${friend.id}`}
+                    className="relative loka-card flex items-center gap-3 overflow-hidden pl-5 min-h-[4.5rem] transition-transform duration-150 active:scale-[0.98]"
+                  >
+                    {code && (
+                      <span className={['absolute left-0 top-0 bottom-0 w-2', subjectColor(code).bar].join(' ')} aria-hidden="true" />
                     )}
-                    {friend.currentClass && friend.endsAt != null && friend.endsAt > Date.now() && (
-                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 tabular-nums">
-                        Ends in {formatDuration(Math.round((friend.endsAt - Date.now()) / 1000))}
-                      </p>
-                    )}
-                  </div>
-                  {friendLocations[friend.id] && (
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
-                      {friendLocations[friend.id]}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
+                    <span className={['rounded-full ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#111113] shrink-0', ring].join(' ')}>
+                      <Avatar url={avatars[friend.id]} name={friend.displayName} size={40} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{friend.displayName}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <StatusBadge status={friend.status} />
+                        {friend.currentClass && (
+                          <span className="text-xs text-gray-700 dark:text-slate-300 truncate">{code}</span>
+                        )}
+                        {friend.currentClass && friend.endsAt != null && friend.endsAt > Date.now() && (
+                          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 tabular-nums">
+                            Ends in {formatDuration(Math.round((friend.endsAt - Date.now()) / 1000))}
+                          </span>
+                        )}
+                      </div>
+                      {friendLocations[friend.id] && (
+                        <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 truncate">At {friendLocations[friend.id]}</p>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </>
         )}
       </section>
     </div>
