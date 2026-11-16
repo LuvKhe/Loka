@@ -39,8 +39,6 @@ export default function OnboardingClient() {
 
     try {
       const supabase = createClient()
-
-      // 1. Sign in anonymously — creates a new anonymous user session
       const { data: existing } = await supabase.auth.getSession()
       if (!existing.session) {
         const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
@@ -48,12 +46,6 @@ export default function OnboardingClient() {
           throw new Error(authError?.message ?? 'Authentication failed')
         }
       }
-
-      // 2. Call the profile setup Edge Function, which:
-      //    - Generates a unique Loka ID server-side
-      //    - Generates a recovery code and stores only its bcrypt hash
-      //    - Inserts the profile and privacy_settings rows
-      //    - Returns the generated lokaId and plaintext recovery code (shown once)
       const res = await fetch('/api/onboarding/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,14 +58,9 @@ export default function OnboardingClient() {
       }
 
       const { recoveryCode } = await res.json()
-
-      // 3. Store the recovery code in sessionStorage so the next page can show it once.
-      //    It is never stored persistently — only the bcrypt hash is on the server.
       if (recoveryCode) {
         sessionStorage.setItem('loka_recovery_code_once', recoveryCode)
       }
-
-      // 4. Redirect to the recovery code display page so user can write it down
       router.replace(ROUTES.ONBOARDING_RECOVERY)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
@@ -82,101 +69,128 @@ export default function OnboardingClient() {
     }
   }
 
+  const shell = 'min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-black'
+
   if (step === 'welcome') {
+    const features = [
+      {
+        title: 'No password, no email',
+        text: 'Pick a name and you are in. Nothing to remember.',
+        icon: <path d="M12 3 4 6v6c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V6l-8-3Z M9 12l2 2 4-4" />,
+      },
+      {
+        title: 'See who is free',
+        text: 'Your timetable shows friends when you are in class and when you are not.',
+        icon: <path d="M4 6h16v14H4z M4 10h16 M8 3v4 M16 3v4" />,
+      },
+      {
+        title: 'You choose what to share',
+        text: 'Only friends you approve see your status. Only the place name is shared, never GPS.',
+        icon: <path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10Z M12 11.5h.01" />,
+      },
+    ]
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+      <main id="main" className={shell}>
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">L</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Welcome to Loka</h1>
-            <p className="text-gray-500 text-sm mt-2">
-              Know when your friends are free — privately.
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcSet="/icon-dark-192.png" />
+              <img src="/icon-192.png" alt="Loka" width={80} height={80} className="w-20 h-20 rounded-2xl mx-auto mb-5 shadow-lg" />
+            </picture>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100" style={{ textWrap: 'balance' }}>
+              Know when your friends are free
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2" style={{ textWrap: 'balance' }}>
+              Loka is the UNESWA Kwaluseni campus app for timetables and friends.
             </p>
           </div>
 
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex gap-3 items-start">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span>
-              <p>No email or password required. No account to create.</p>
-            </div>
-            <div className="flex gap-3 items-start">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span>
-              <p>Your location is never stored — only your general campus area.</p>
-            </div>
-            <div className="flex gap-3 items-start">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span>
-              <p>Only friends you approve can see your status.</p>
-            </div>
+          <ul className="space-y-3">
+            {features.map((f) => (
+              <li key={f.title} className="loka-card flex gap-3 items-start">
+                <span className="shrink-0 w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {f.icon}
+                  </svg>
+                </span>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{f.title}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{f.text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="space-y-3">
+            <button onClick={() => setStep('name')} className="loka-btn-primary w-full min-h-[3rem] text-base">
+              Get started
+            </button>
+            <p className="text-center text-sm text-gray-700 dark:text-gray-300">
+              Already have a Loka profile?{' '}
+              <Link href="/restore" className="font-semibold text-blue-700 dark:text-blue-400 underline">
+                Restore it
+              </Link>
+            </p>
           </div>
-
-          <button
-            onClick={() => setStep('name')}
-            className="loka-btn-primary w-full py-3"
-          >
-            Get started
-          </button>
-
-          <p className="text-center text-sm text-gray-600">
-            Already have a Loka profile?{' '}
-            <Link href="/restore" className="font-semibold text-blue-700 underline">
-              Restore it
-            </Link>
-          </p>
         </div>
-      </div>
+      </main>
     )
   }
 
   if (step === 'name') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+      <main id="main" className={shell}>
         <div className="w-full max-w-sm space-y-6">
           <div>
             <button
               onClick={() => setStep('welcome')}
-              className="text-sm text-gray-500 mb-4 -ml-1 px-1"
+              className="text-sm font-medium text-gray-700 dark:text-gray-200 min-h-[2.75rem] -ml-1 px-1"
             >
               Back
             </button>
-            <h2 className="text-xl font-bold text-gray-900">What should friends call you?</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 mt-2">Step 1 of 2</p>
+            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mt-1" style={{ textWrap: 'balance' }}>
+              What should friends call you?
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               This is your display name. You can change it later.
             </p>
           </div>
 
-          <form onSubmit={handleNameSubmit} className="space-y-4">
+          <form onSubmit={handleNameSubmit} className="space-y-5">
             <div>
+              <label htmlFor="display-name" className="sr-only">Your display name</label>
               <input
+                id="display-name"
                 type="text"
                 value={displayName}
                 onChange={(e) => handleNameChange(e.target.value)}
-                aria-label="Your display name"
                 placeholder="Your name"
                 autoFocus
                 maxLength={40}
-                className={['loka-input w-full', nameError ? 'border-red-400 focus:ring-red-400' : ''].join(' ')}
+                aria-invalid={nameError ? true : undefined}
+                aria-describedby={nameError ? 'name-error' : undefined}
+                className={['loka-input w-full min-h-[3.5rem] text-lg', nameError ? 'border-red-500' : ''].join(' ')}
               />
               {nameError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{nameError}</p>
+                <p id="name-error" role="alert" className="text-sm text-red-700 dark:text-red-400 mt-1.5">{nameError}</p>
               )}
             </div>
 
-            <label className="flex items-start gap-3 text-xs text-gray-600">
+            <label className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300 min-h-[2.75rem]">
               <input
                 type="checkbox"
                 checked={accepted}
                 onChange={(e) => setAccepted(e.target.checked)}
-                className="mt-0.5 h-4 w-4"
+                className="mt-0.5 h-5 w-5 shrink-0"
               />
               <span>
                 I have read and agree to the{' '}
-                <Link href="/terms" target="_blank" className="text-blue-600 underline">
+                <Link href="/terms" target="_blank" className="text-blue-700 dark:text-blue-400 underline">
                   Terms of Use
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" target="_blank" className="text-blue-600 underline">
+                <Link href="/privacy" target="_blank" className="text-blue-700 dark:text-blue-400 underline">
                   Privacy Policy
                 </Link>
                 .
@@ -186,40 +200,36 @@ export default function OnboardingClient() {
             <button
               type="submit"
               disabled={!displayName.trim() || !accepted}
-              className="loka-btn-primary w-full py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="loka-btn-primary w-full min-h-[3rem] text-base disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue
             </button>
           </form>
         </div>
-      </div>
+      </main>
     )
   }
 
   if (step === 'creating') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-gray-500">Setting up your profile...</p>
+      <main id="main" className={shell}>
+        <div className="text-center space-y-3" role="status">
+          <div className="w-12 h-12 border-4 border-blue-700 border-t-transparent rounded-full motion-safe:animate-spin mx-auto" aria-hidden="true" />
+          <p className="text-gray-700 dark:text-gray-300">Setting up your profile...</p>
         </div>
-      </div>
+      </main>
     )
   }
 
-  // error step
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+    <main id="main" className={shell}>
       <div className="w-full max-w-sm space-y-4 text-center">
-        <p className="text-gray-900 font-medium">Something went wrong</p>
-        <p className="text-sm text-gray-500">{errorMessage}</p>
-        <button
-          onClick={() => setStep('name')}
-          className="loka-btn-secondary py-2 px-4 text-sm"
-        >
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Something went wrong</h1>
+        <p role="alert" className="text-sm text-red-700 dark:text-red-400">{errorMessage}</p>
+        <button onClick={() => setStep('name')} className="loka-btn-primary min-h-[3rem] px-6">
           Try again
         </button>
       </div>
-    </div>
+    </main>
   )
 }

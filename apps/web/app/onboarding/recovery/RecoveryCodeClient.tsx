@@ -28,8 +28,6 @@ export default function RecoveryCodeClient() {
 
   async function handleDone() {
     setNavigating(true)
-    // Wait for Supabase to confirm the session is active before navigating.
-    // This ensures the auth cookie is written so the server can read it.
     const supabase = createClient()
     let attempts = 0
     while (attempts < 10) {
@@ -41,79 +39,73 @@ export default function RecoveryCodeClient() {
     window.location.href = ROUTES.HOME
   }
 
+  const shell = 'min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-black'
+
   if (!code) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+      <main id="main" className={shell}>
         <div className="w-full max-w-sm space-y-4 text-center">
-          <p className="text-gray-900 font-medium">Recovery code not available</p>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Recovery code not available</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Your recovery code was already shown and cannot be displayed again. Open Profile, then Recovery code, to create a new one.
           </p>
-          <button onClick={handleDone} className="loka-btn-primary py-2 px-4 text-sm">
+          <button onClick={handleDone} className="loka-btn-primary min-h-[3rem] px-6">
             Go to home
           </button>
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+    <main id="main" className={shell}>
       <div className="w-full max-w-sm space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Save your recovery code</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            This is the only time you will see this code. If you lose access to this device,
-            it is the only way to restore your Loka profile. Loka cannot recover it for you.
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">Step 2 of 2</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mt-1" style={{ textWrap: 'balance' }}>
+            Save your recovery code
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            This is the only time you will see it. If you lose this device, your Loka ID and this code are the only way to get your profile back.
           </p>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Recovery Code</p>
-          <p className="font-mono font-bold text-gray-900 text-lg tracking-widest break-all">
-            {code}
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 space-y-2">
-          <p className="text-sm font-medium text-gray-900">Before you continue</p>
-          <ul className="list-disc pl-5 space-y-1 text-xs text-gray-600">
-            <li>Save this code in Notes or a password manager. A screenshot is not enough if you delete it.</li>
-            <li>Add Loka to your home screen and always open it from there. This keeps you signed in.</li>
-          </ul>
-        </div>
-
-        <div className="space-y-3">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-700 to-violet-900 text-white p-5 shadow-lg">
+          <p className="text-xs font-semibold uppercase tracking-wider">Recovery code</p>
+          <p className="font-mono font-bold text-xl tracking-wider break-all mt-1 select-all">{code}</p>
           <button
             onClick={handleCopy}
-            className="loka-btn-secondary w-full py-2.5 text-sm"
+            className="mt-4 min-h-[2.75rem] px-4 rounded-full text-sm font-semibold bg-black/30 active:scale-95 transition-transform duration-150"
           >
-            {copied ? 'Copied to clipboard' : 'Copy to clipboard'}
+            {copied ? 'Copied' : 'Copy code'}
           </button>
+        </div>
 
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <div className="shrink-0 mt-0.5">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-            </div>
-            <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
-              I have saved my recovery code somewhere safe.
-            </span>
+        <ul className="loka-card list-disc pl-9 pr-4 space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+          <li>Save it in Notes or a password manager. A screenshot is not enough if you delete it.</li>
+          <li>Add Loka to your home screen and open it from there to stay signed in.</li>
+        </ul>
+
+        <div className="space-y-3">
+          <label className="flex items-start gap-3 text-sm text-gray-800 dark:text-gray-200 min-h-[2.75rem]">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+              className="w-5 h-5 mt-0.5 shrink-0"
+            />
+            <span>I have saved my recovery code somewhere safe.</span>
           </label>
 
           <button
             onClick={handleDone}
             disabled={!confirmed || navigating}
-            className="loka-btn-primary w-full py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="loka-btn-primary w-full min-h-[3rem] text-base disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {navigating ? 'Loading...' : 'Done'}
           </button>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
