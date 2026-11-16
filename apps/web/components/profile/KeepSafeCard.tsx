@@ -20,7 +20,7 @@ export default function KeepSafeCard() {
         <p className="text-sm font-medium text-gray-900 dark:text-slate-100">Keep your profile safe</p>
         <ul className="list-disc pl-5 space-y-1 text-xs text-gray-600 dark:text-slate-300">
           <li>
-            Your recovery code was shown once when you signed up. Keep it in Notes or a password manager.
+            Your recovery code was shown once when you signed up. Keep it in Notes or a password manager. Not sure you saved it? Create a new one from Profile, Recovery code.
           </li>
           <li>Add Loka to your home screen and always open it from there.</li>
         </ul>

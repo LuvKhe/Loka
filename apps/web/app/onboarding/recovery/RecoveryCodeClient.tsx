@@ -47,7 +47,7 @@ export default function RecoveryCodeClient() {
         <div className="w-full max-w-sm space-y-4 text-center">
           <p className="text-gray-900 font-medium">Recovery code not available</p>
           <p className="text-sm text-gray-500">
-            Your recovery code was already displayed. You can view it again from your profile.
+            Your recovery code was already shown and cannot be displayed again. Open Profile, then Recovery code, to create a new one.
           </p>
           <button onClick={handleDone} className="loka-btn-primary py-2 px-4 text-sm">
             Go to home

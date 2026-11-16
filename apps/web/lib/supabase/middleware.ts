@@ -25,13 +25,12 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user ?? null
-
-  // Redirect unauthenticated users to onboarding
   const { pathname } = request.nextUrl
   const isOnboarding = pathname.startsWith('/onboarding')
   const isPublic =
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
+    pathname === '/restore' ||
     pathname === '/terms' ||
     pathname === '/privacy' ||
     pathname === '/manifest.json' ||
@@ -42,9 +41,6 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/onboarding'
     return NextResponse.redirect(url)
   }
-
-  // Don't redirect authenticated users away from onboarding —
-  // they may not have a profile yet. The onboarding page handles its own flow.
 
   return supabaseResponse
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createHash } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function rateLimited(
@@ -33,4 +34,18 @@ export async function rateLimited(
     console.error('Rate limit unavailable:', err instanceof Error ? err.message : err)
     return null
   }
+}
+
+export function keyToUuid(key: string): string {
+  const h = createHash('sha256').update(key).digest('hex')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`
+}
+
+export async function rateLimitedByKey(
+  key: string,
+  action: string,
+  maxHits: number,
+  windowSeconds: number,
+): Promise<NextResponse | null> {
+  return rateLimited(keyToUuid(key), action, maxHits, windowSeconds)
 }

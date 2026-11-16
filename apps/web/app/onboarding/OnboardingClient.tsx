@@ -117,6 +117,13 @@ export default function OnboardingClient() {
           >
             Get started
           </button>
+
+          <p className="text-center text-sm text-gray-600">
+            Already have a Loka profile?{' '}
+            <Link href="/restore" className="font-semibold text-blue-700 underline">
+              Restore it
+            </Link>
+          </p>
         </div>
       </div>
     )
