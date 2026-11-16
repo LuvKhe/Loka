@@ -1,10 +1,9 @@
-// POST /api/friends/requests
-// Sends a friend request to another user.
 
 import { NextResponse } from 'next/server'
 import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendPush } from '@/lib/push'
 
 export async function POST(request: Request) {
   try {
@@ -24,8 +23,6 @@ export async function POST(request: Request) {
     if (!toUserId || toUserId === user.id) {
       return NextResponse.json({ error: 'Invalid recipient' }, { status: 400 })
     }
-
-    // Verify the recipient exists
     const { data: recipient } = await createAdminClient()
       .from('profiles')
       .select('id')
@@ -35,8 +32,6 @@ export async function POST(request: Request) {
     if (!recipient) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
-
-    // Check not already friends
     const [userA, userB] = [user.id, toUserId].sort()
     const { data: existing } = await supabase
       .from('friendships')
@@ -48,8 +43,6 @@ export async function POST(request: Request) {
     if (existing) {
       return NextResponse.json({ error: 'Already friends' }, { status: 409 })
     }
-
-    // Insert the friend request
     const { error: insertError } = await supabase.from('friend_requests').insert({
       from_user_id: user.id,
       to_user_id: toUserId,
@@ -63,6 +56,19 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: 'Failed to send request' }, { status: 500 })
     }
+
+    const { data: sender } = await createAdminClient()
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    await sendPush(toUserId, 'friend_request', {
+      title: 'New friend request',
+      body: `${sender?.display_name ?? 'Someone'} wants to be your friend on Loka.`,
+      url: '/friends',
+      tag: 'loka-friend-request',
+    })
 
     return NextResponse.json({ ok: true })
   } catch {

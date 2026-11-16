@@ -8,6 +8,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 import Avatar from '@/components/ui/Avatar'
 import KeepSafeCard from '@/components/profile/KeepSafeCard'
 import DeleteAccountPanel from '@/components/profile/DeleteAccountPanel'
+import NotificationsPanel from '@/components/profile/NotificationsPanel'
 
 interface Props {
   profile: Profile | null
@@ -88,6 +89,13 @@ export default function ProfileClient({ profile, privacySettings }: Props) {
         <h2 className="loka-section-label">Privacy</h2>
         <PrivacySettingsPanel settings={privacySettings} />
       </section>
+
+      {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && (
+        <section>
+          <h2 className="loka-section-label">Notifications</h2>
+          <NotificationsPanel />
+        </section>
+      )}
 
       <section>
         <h2 className="loka-section-label">Appearance</h2>

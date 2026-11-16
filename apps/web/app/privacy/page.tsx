@@ -15,6 +15,7 @@ export default function PrivacyPage() {
           <li>Your friend requests and friendships.</li>
           <li>Your privacy settings and the version of these terms you accepted.</li>
           <li>Your current campus location, only if you choose to check in.</li>
+          <li>If you turn on notifications: your browser&apos;s push address and encryption keys for that device, your notification choices, and a short record of which reminders were already sent so none repeat. Your device details are removed when you turn notifications off, and everything is removed if you delete your profile.</li>
         </ul>
       </LegalSection>
       <LegalSection title="Location">

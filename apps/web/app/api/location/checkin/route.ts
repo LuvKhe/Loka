@@ -9,6 +9,9 @@ import { NextResponse } from 'next/server'
 import { rateLimited } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { validateCustomPlace } from '@loka/shared/validation'
+import { notifyFriendsOfCheckin } from '@/lib/friend-alerts'
+
+const ARRIVAL_GAP_MS = 3 * 60 * 60 * 1000
 
 export async function POST(request: Request) {
   try {
@@ -78,7 +81,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Upsert — one row per user, updated in place
+    const { data: previous } = await supabase
+      .from('active_locations')
+      .select('updated_at')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
     const { error } = await supabase
       .from('active_locations')
       .upsert(
@@ -95,6 +103,9 @@ export async function POST(request: Request) {
       console.error('Location upsert error:', error)
       return NextResponse.json({ error: 'Failed to update location' }, { status: 500 })
     }
+
+    const arrived = !previous || Date.now() - new Date(previous.updated_at).getTime() > ARRIVAL_GAP_MS
+    if (arrived) await notifyFriendsOfCheckin(user.id, resolvedLabel)
 
     return NextResponse.json({ ok: true, placeLabel: resolvedLabel })
   } catch (err) {

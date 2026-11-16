@@ -31,6 +31,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname === '/restore' ||
+    pathname === '/sw.js' ||
     pathname === '/terms' ||
     pathname === '/privacy' ||
     pathname === '/manifest.json' ||
